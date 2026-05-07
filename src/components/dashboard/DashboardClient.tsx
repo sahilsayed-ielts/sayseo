@@ -225,14 +225,29 @@ export default function DashboardClient({ siteId, site }: { siteId: string; site
           fetch(`/api/report/trend?siteId=${siteId}&dateRange=${range}`).then((r) => r.json()),
         ])
 
-        if (ai.error === 'reconnect_required' || pages.error === 'reconnect_required') {
+        if (
+          ai.error === 'reconnect_required' ||
+          pages.error === 'reconnect_required' ||
+          trend.error === 'reconnect_required'
+        ) {
           setReconnect(true)
           return
         }
 
-        setAiData(ai)
-        setPagesData(pages)
-        setTrendData(trend)
+        // Normalize any error responses into safe empty shapes so renders never crash
+        const safeAi: AiTrafficReport = ai.error
+          ? { aiSources: [], topPages: [], topQueries: [], totalAiSessions: 0, totalSessions: 0, aiPercentage: 0, dateRange: range, fromCache: false }
+          : ai
+        const safePages: PagesReport = pages.error
+          ? { pages: [], dateRange: range, fromCache: false }
+          : pages
+        const safeTrend: TrendResponse = trend.error
+          ? { series: {}, sources: [], dateRange: range }
+          : trend
+
+        setAiData(safeAi)
+        setPagesData(safePages)
+        setTrendData(safeTrend)
         setFromCache(!!ai.fromCache)
       } catch (err) {
         console.error('[dashboard] fetch error:', err)
