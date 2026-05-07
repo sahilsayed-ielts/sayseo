@@ -1,129 +1,23 @@
 export const siteConfig = {
-  name: "sayseo.com",
-  url: "https://sayseo.com",
+  name: "sayseo",
+  domainLabel: "sayseo.co.uk",
+  url: "https://sayseo.co.uk",
   email: "hello@sayseo.com",
   phone: "+44 (0)20 4525 1408",
   phoneHref: "+442045251408",
+  baseLocation: "London, United Kingdom",
+  serviceRegions: ["United Kingdom", "India"],
   description:
-    "sayseo.com is a premium SEO consultancy for the UK and India markets, helping businesses turn search visibility into qualified pipeline through research, technical audits, local SEO, content strategy, and consulting.",
+    "sayseo is a UK-based SEO education, tools, and task platform for website owners, publishers, ecommerce teams, marketers, and agencies that want to learn SEO, use practical tools, and buy clearly scoped SEO work.",
 };
 
 export const navigation = [
-  { label: "About", href: "/about" },
-  { label: "Services", href: "/services" },
-  { label: "UK SEO", href: "/uk-seo-services" },
-  { label: "India SEO", href: "/india-seo-services" },
-  { label: "Case Studies", href: "/case-studies" },
+  { label: "Home", href: "/" },
+  { label: "Learn SEO", href: "/learn-seo" },
+  { label: "Tools", href: "/tools" },
+  { label: "SEO Tasks", href: "/seo-tasks" },
+  { label: "Marketplace", href: "/marketplace" },
   { label: "Blog", href: "/blog" },
-  { label: "Contact", href: "/contact" },
-];
-
-export const siteHighlights = [
-  "Senior-led audits that marketing and development teams can act on",
-  "Research focused on qualified demand, not traffic inflation",
-  "UK and India market context shaped across London and Bengaluru",
-];
-
-export const trustStripItems = [
-  {
-    title: "Senior-led",
-    description: "Strategy stays close to experienced consultants from first brief through prioritisation.",
-  },
-  {
-    title: "Response standard",
-    description: "New enquiries are usually reviewed and answered within one business day.",
-  },
-  {
-    title: "UK and India",
-    description: "Built around regional nuance, local relevance, and different buyer journeys across both markets.",
-  },
-  {
-    title: "Implementation-ready",
-    description: "Recommendations are structured so founders, marketers, and developers can actually use them.",
-  },
-];
-
-export const whyChooseUs = [
-  {
-    title: "Calm strategic judgement",
-    description:
-      "We help teams separate meaningful SEO decisions from noise so planning gets sharper and stakeholder alignment becomes easier.",
-  },
-  {
-    title: "Depth without theatre",
-    description:
-      "Technical analysis, competitor intelligence, and content planning are grounded in operating reality, not bloated decks or abstract best-practice theatre.",
-  },
-  {
-    title: "Built for growth stages",
-    description:
-      "The architecture and strategy model are designed to scale into clusters, case studies, location pages, and stronger category positioning over time.",
-  },
-];
-
-export const trustSignalsExtended = [
-  {
-    title: "Anonymised growth examples",
-    description:
-      "Case studies are framed around commercial movement, operating context, and decisions made rather than inflated claims.",
-  },
-  {
-    title: "Senior access from day one",
-    description:
-      "Enquiries, scoping conversations, and delivery direction stay close to senior consultants rather than being passed into a sales layer.",
-  },
-  {
-    title: "Clear response and scope",
-    description:
-      "Every page is designed to show what the work includes, who it suits, and how the first conversation is handled.",
-  },
-];
-
-export const inquiryReasons = [
-  "You need a senior view on what is actually worth fixing first.",
-  "You want clearer service scope before committing budget or team time.",
-  "You need search strategy that fits UK, India, or cross-market growth plans.",
-];
-
-export const contactExpectations = [
-  {
-    title: "We review fit first",
-    description:
-      "If the brief looks like a strong match, we reply with the best next step rather than forcing a generic sales call.",
-  },
-  {
-    title: "The first conversation is practical",
-    description:
-      "We use the call to understand the business model, current constraints, and what a sensible SEO scope should actually look like.",
-  },
-  {
-    title: "You leave with clearer direction",
-    description:
-      "Even before a project starts, the goal is to give your team more clarity about priorities, risks, and likely opportunities.",
-  },
-];
-
-export const processSteps = [
-  {
-    title: "Discovery and diagnosis",
-    description:
-      "We review the business model, current visibility, priority competitors, and internal constraints that shape what can be implemented well.",
-  },
-  {
-    title: "Prioritised roadmap",
-    description:
-      "You receive a focused plan sequencing quick wins, foundational fixes, and longer-term opportunities around impact and effort.",
-  },
-  {
-    title: "Execution guidance",
-    description:
-      "Whether your team is in-house or distributed, strategy is translated into clear briefs, technical actions, and editorial priorities.",
-  },
-  {
-    title: "Review and refinement",
-    description:
-      "We interpret performance movement, refine priorities, and keep the roadmap tied to the signals that matter commercially.",
-  },
 ];
 
 export type FAQItem = {
@@ -131,97 +25,195 @@ export type FAQItem = {
   answer: string;
 };
 
-export const faqItems: FAQItem[] = [
+export const platformPillars = [
   {
-    question: "Do you only work with businesses in the UK and India?",
-    answer:
-      "Those are the two core markets we focus on, but the consultancy can also support international businesses that need more nuanced regional search planning.",
+    eyebrow: "Learn SEO",
+    title: "Structured SEO education for real sites and real constraints.",
+    description:
+      "Use guides, learning paths, and practical examples to understand how SEO works before you buy anything.",
+    href: "/learn-seo",
   },
   {
-    question: "Can you work with our internal marketing or development team?",
-    answer:
-      "Yes. The work is designed to slot into internal teams smoothly, with clear documentation, prioritised recommendations, and practical implementation guidance.",
+    eyebrow: "Tools",
+    title: "Use practical calculators, estimators, and planning tools.",
+    description:
+      "Move faster with lightweight utilities for keyword mapping, metadata scoping, task estimation, and content planning.",
+    href: "/tools",
   },
   {
-    question: "Do you offer one-off projects as well as retainers?",
-    answer:
-      "Yes. Technical audits, competitor analysis, and keyword research can all be delivered as standalone projects, while ongoing consulting is available on retainer.",
+    eyebrow: "SEO Tasks",
+    title: "Request clearly scoped SEO work without a vague retainer process.",
+    description:
+      "Estimate the cost of defined SEO tasks and buy the work your site actually needs.",
+    href: "/seo-tasks",
   },
   {
-    question: "What types of businesses benefit most from sayseo.com?",
-    answer:
-      "Service brands, B2B companies, local businesses, and growth-stage teams benefit most when they need stronger SEO direction without wasting time on generic agency process.",
-  },
-  {
-    question: "Is content strategy part of the offer or a separate service?",
-    answer:
-      "Content strategy can be scoped on its own, but it usually performs best when informed by keyword research, competitive positioning, and technical SEO context.",
+    eyebrow: "Marketplace",
+    title: "See where the platform is heading next.",
+    description:
+      "sayseo is growing toward a marketplace for specialist SEO support, task delivery, and vetted execution help.",
+    href: "/marketplace",
   },
 ];
 
+export const footerGroups = [
+  {
+    title: "Platform",
+    links: [
+      { label: "Home", href: "/" },
+      { label: "Learn SEO", href: "/learn-seo" },
+      { label: "Tools", href: "/tools" },
+      { label: "SEO Tasks", href: "/seo-tasks" },
+      { label: "Marketplace", href: "/marketplace" },
+      { label: "Blog", href: "/blog" },
+    ],
+  },
+  {
+    title: "Popular Paths",
+    links: [
+      { label: "Task quote estimator", href: "/seo-tasks#quote-estimator" },
+      { label: "Metadata scope calculator", href: "/tools#metadata-scope-calculator" },
+      { label: "Keyword mapping guide", href: "/learn-seo#keyword-research" },
+      { label: "Technical checklist builder", href: "/tools#technical-seo-checklist-builder" },
+      { label: "Marketplace beta", href: "/marketplace#beta" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { label: "About", href: "/about" },
+      { label: "Contact", href: "/contact" },
+      { label: "Case Studies", href: "/case-studies" },
+      { label: "Advanced Services", href: "/services" },
+      { label: "UK SEO", href: "/uk-seo-services" },
+      { label: "India SEO", href: "/india-seo-services" },
+    ],
+  },
+];
+
+export const homepageFaqs: FAQItem[] = [
+  {
+    question: "Is sayseo an SEO agency?",
+    answer:
+      "No. sayseo is positioned as a content, tools, and SEO task platform. It helps users learn SEO, use practical utilities, and request clearly scoped work without defaulting to an agency retainer model.",
+  },
+  {
+    question: "Can I use sayseo if I only need one piece of SEO work?",
+    answer:
+      "Yes. The platform is designed for defined SEO tasks such as keyword mapping, content briefs, metadata optimisation, internal linking plans, and technical reviews.",
+  },
+  {
+    question: "Are the tools free or paid?",
+    answer:
+      "Some tools are designed as free planning and estimation utilities, while others support commercial task scoping and future marketplace workflows.",
+  },
+  {
+    question: "Who is sayseo built for?",
+    answer:
+      "The platform is built for website owners, small businesses, publishers, ecommerce teams, in-house marketers, and agencies needing specialist SEO support.",
+  },
+];
+
+export const contactExpectations = [
+  {
+    title: "Support-first replies",
+    description:
+      "The contact flow is designed for general questions, tool feedback, task requests, marketplace interest, and partnerships rather than a hard sales process.",
+  },
+  {
+    title: "Fast routing",
+    description:
+      "Most new messages receive a direct reply within one business day with the right next step, whether that is a resource, a task quote, or a product conversation.",
+  },
+  {
+    title: "Clear next action",
+    description:
+      "The aim is to guide you toward a useful page, a practical task scope, or the right support route without unnecessary back-and-forth.",
+  },
+];
+
+export const supportReasons = [
+  "You want help choosing between a guide, a tool, or a paid SEO task.",
+  "You have feedback on a tool, calculator, or learning page.",
+  "You need white-label or specialist SEO support for a site or client project.",
+];
+
+export const newsletterBlock = {
+  eyebrow: "Stay updated",
+  title: "Get new SEO guides, tools, and task updates without the noise.",
+  description:
+    "Follow sayseo as the platform grows through practical SEO resources, product updates, and scoped delivery options for modern websites.",
+  primaryLabel: "Follow platform updates",
+  primaryHref: "/contact",
+  secondaryLabel: "Browse the blog",
+  secondaryHref: "/blog",
+};
+
 export const regionalPages = {
   uk: {
-    title: "SEO services shaped for competitive UK categories and trust-sensitive buying journeys.",
+    title:
+      "UK SEO support for businesses that need stronger visibility, clearer page strategy, and more useful execution paths.",
     description:
-      "For many UK businesses, ranking is only part of the job. Search visibility also has to support brand trust, local pack presence, and a buying journey that often includes multiple stakeholders.",
+      "For UK businesses, SEO has to support trust, commercial relevance, local visibility, and the practical constraints of real teams. sayseo approaches that through education, tools, task buying, and deeper support routes.",
     highlights: [
-      "Local SEO for multi-location service brands",
-      "Research built around high-intent UK search behaviour",
-      "Consulting support for in-house teams and founders",
+      "UK-focused SEO resources and support",
+      "Tools, tasks, and specialist help in one platform",
+      "Useful for businesses, website owners, and agencies",
     ],
     focus: [
       {
-        title: "Local trust signals",
+        title: "Trust-sensitive search journeys",
         description:
-          "Google Business Profile, review quality, regional landing pages, and service-area coverage need to work together for local discovery.",
+          "Service pages, category pages, local landing pages, and supporting guides all need to communicate trust while still capturing high-intent search demand.",
       },
       {
-        title: "Commercial keyword alignment",
+        title: "Practical delivery support",
         description:
-          "The strategy emphasises terms tied to service demand, qualified enquiries, and category authority rather than broad vanity reach.",
+          "Metadata, internal linking, briefs, technical fixes, and local improvements need to be easier to scope and easier to buy.",
       },
       {
-        title: "Implementation clarity",
+        title: "Flexible support formats",
         description:
-          "Recommendations are prioritised so they fit teams with limited development cycles and competing marketing initiatives.",
+          "Users can start with resources and tools, move into task estimates, and only use deeper support routes when the problem genuinely calls for them.",
       },
     ],
     engagements: [
-      "Technical audits for service businesses and B2B sites",
-      "Local SEO programmes for multi-location growth",
-      "Consulting retainers for in-house marketing teams",
+      "Technical SEO reviews for UK business sites and content estates",
+      "Productised SEO tasks for specific page, metadata, linking, and content improvements",
+      "Specialist support for in-house teams and agency workflows",
     ],
   },
   india: {
-    title: "SEO services designed for India’s scale, complexity, and fast-moving category demand.",
+    title:
+      "India SEO services for teams that need scalable organic growth, clearer priorities, and practical execution support.",
     description:
-      "India-focused SEO often needs a different balance of commercial positioning, local nuance, and scalable content architecture. We shape the plan around how people actually search across regions and categories.",
+      "For Indian businesses, publishers, ecommerce brands, startups, and agencies, SEO often has to support fast category expansion, local and national visibility, and coordination across multiple stakeholders. sayseo approaches that through learning resources, tools, scoped tasks, and deeper specialist support.",
     highlights: [
-      "Category growth planning for fast-scaling brands",
-      "Support for multilingual and regionally nuanced intent",
-      "Clear prioritisation for lean internal teams",
+      "India-focused SEO resources and support",
+      "Built for businesses, publishers, ecommerce teams, and agencies",
+      "Flexible paths from learning and tools to scoped delivery support",
     ],
     focus: [
       {
-        title: "Search behaviour by region",
+        title: "Large-category and regional search planning",
         description:
-          "We account for differences in language, regional relevance, and how category maturity changes the search journey.",
+          "Indian search growth often spans broad categories, service geographies, city-level intent, and multiple stages of commercial demand. Page strategy has to stay structured as the site expands.",
       },
       {
-        title: "Efficient content architecture",
+        title: "Execution support across busy teams",
         description:
-          "The goal is to build a site structure that can scale into city pages, service clusters, and educational content without becoming unwieldy.",
+          "SEO momentum depends on making keyword research, metadata, briefs, technical fixes, and internal linking easier to scope and easier to hand off across marketing, product, and content teams.",
       },
       {
-        title: "Competitive positioning",
+        title: "Flexible specialist support",
         description:
-          "The strategy aligns SEO with pricing, proposition clarity, and category differentiation so the right traffic converts more consistently.",
+          "Some teams only need better planning tools and educational resources, while others need clearly defined SEO tasks or white-label specialist help that fits an existing workflow.",
       },
     ],
     engagements: [
-      "Keyword research and competitor analysis for India-first categories",
-      "SEO consulting for startups and growth-stage operators",
-      "Content and local SEO planning for pan-India visibility",
+      "Keyword research, page mapping, and information architecture support for growing Indian sites",
+      "Technical SEO reviews for content-heavy, ecommerce, and lead generation websites",
+      "Scoped delivery support for in-house teams, startups, and agency partners",
     ],
   },
 };
