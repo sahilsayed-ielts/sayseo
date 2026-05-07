@@ -1,69 +1,66 @@
-import type { Metadata } from "next";
-import { Fraunces, Manrope } from "next/font/google";
-import { siteConfig } from "@/content/site";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Geist, Geist_Mono } from 'next/font/google'
+import { siteConfig } from '@/content/site'
+import './globals.css'
 
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-});
+const geistSans = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  weight: ["500", "600"],
-});
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+})
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: "SEO Consultancy for UK and India Growth Teams",
-    template: "%s | sayseo.com",
+    default: 'SaySEO — AI Visibility Platform for SEO Professionals',
+    template: '%s | SaySEO',
   },
   description: siteConfig.description,
   applicationName: siteConfig.name,
-  category: "SEO consultancy",
+  category: 'SEO platform',
   alternates: {
     canonical: siteConfig.url,
   },
   keywords: [
-    "SEO consultancy UK",
-    "SEO services India",
-    "technical SEO audit",
-    "keyword research services",
-    "competitor analysis SEO",
-    "local SEO consulting",
+    'AI visibility',
+    'SEO platform',
+    'AI traffic attribution',
+    'ChatGPT SEO',
+    'Perplexity SEO',
+    'GA4 integration',
+    'Search Console integration',
   ],
   robots: {
     index: true,
     follow: true,
   },
   openGraph: {
-    type: "website",
+    type: 'website',
     siteName: siteConfig.name,
-    title: "SEO Consultancy for UK and India Growth Teams",
+    title: 'SaySEO — AI Visibility Platform for SEO Professionals',
     description: siteConfig.description,
     url: siteConfig.url,
-    locale: "en_GB",
+    locale: 'en_GB',
   },
   twitter: {
-    card: "summary_large_image",
-    title: "Premium SEO Consultancy for UK & India",
+    card: 'summary_large_image',
+    title: 'SaySEO — AI Visibility Platform for SEO Professionals',
     description: siteConfig.description,
   },
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${manrope.variable} ${fraunces.variable} h-full antialiased`}
-    >
-      <body className="min-h-full bg-stone-50 text-slate-950">{children}</body>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className="min-h-full bg-[#0A0A0A] text-white">{children}</body>
     </html>
-  );
+  )
 }
