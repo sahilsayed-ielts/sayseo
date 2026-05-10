@@ -1,0 +1,83 @@
+import { NextResponse } from 'next/server'
+import { google } from 'googleapis'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getOAuthClient, isInvalidGrant } from '@/lib/google-clients'
+
+export async function GET() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+
+  // Step 1: get all connected_sites belonging to this user
+  const { data: userSites } = await supabase
+    .from('connected_sites')
+    .select('id, access_token')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  console.log('[ga4-properties] user.id:', user.id)
+  console.log('[ga4-properties] userSites:', JSON.stringify(userSites))
+
+  if (!userSites || userSites.length === 0) {
+    return NextResponse.json(
+      { error: 'No connected Google account found. Connect a site with Google OAuth first.' },
+      { status: 422 }
+    )
+  }
+
+  const siteIds = userSites.map((s) => s.id as string)
+
+  // Step 2: find the most recent oauth_tokens row for any of the user's sites
+  let siteId: string | null = null
+  const admin = createAdminClient()
+
+  const { data: oauthRow } = await admin
+    .from('oauth_tokens')
+    .select('site_id')
+    .in('site_id', siteIds)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (oauthRow?.site_id) {
+    siteId = oauthRow.site_id as string
+  }
+
+  // Step 3: fall back to the first connected_sites row with a stored access_token
+  if (!siteId) {
+    const fallback = userSites.find((s) => s.access_token != null)
+    if (fallback) siteId = fallback.id as string
+  }
+
+  if (!siteId) {
+    return NextResponse.json(
+      { error: 'No connected Google account found. Connect a site with Google OAuth first.' },
+      { status: 422 }
+    )
+  }
+
+  console.log('[ga4-properties] siteId:', siteId)
+
+  try {
+    const oauth2Client = await getOAuthClient(siteId, ['ga4', 'gsc'])
+    const analyticsAdmin = google.analyticsadmin({ version: 'v1beta', auth: oauth2Client })
+    const res = await analyticsAdmin.accountSummaries.list({})
+    console.log('[ga4-properties] full response data:', JSON.stringify(res.data))
+    console.log('[ga4-properties] accountSummaries:', JSON.stringify(res.data.accountSummaries))
+
+    const properties = (res.data.accountSummaries ?? []).flatMap((account) =>
+      (account.propertySummaries ?? []).map((prop) => ({
+        propertyId: (prop.property ?? '').replace('properties/', ''),
+        displayName: prop.displayName ?? '',
+        accountName: account.displayName ?? '',
+      }))
+    )
+
+    console.log('[ga4-properties] mapped properties:', JSON.stringify(properties))
+    return NextResponse.json({ properties })
+  } catch (err) {
+    console.error('[ga4-properties] error:', JSON.stringify(err, Object.getOwnPropertyNames(err)))
+    return NextResponse.json({ error: 'Failed to fetch GA4 properties' }, { status: 500 })
+  }
+}
