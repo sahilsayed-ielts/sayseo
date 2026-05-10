@@ -78,6 +78,9 @@ export async function GET() {
     return NextResponse.json({ properties })
   } catch (err) {
     console.error('[ga4-properties] error:', JSON.stringify(err, Object.getOwnPropertyNames(err)))
-    return NextResponse.json({ error: 'Failed to fetch GA4 properties' }, { status: 500 })
+    return NextResponse.json({
+      error: err instanceof Error ? err.message : JSON.stringify(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    }, { status: 500 })
   }
 }
