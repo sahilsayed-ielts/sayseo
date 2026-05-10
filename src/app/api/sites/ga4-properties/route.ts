@@ -16,9 +16,6 @@ export async function GET() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
-  console.log('[ga4-properties] user.id:', user.id)
-  console.log('[ga4-properties] userSites:', JSON.stringify(userSites))
-
   if (!userSites || userSites.length === 0) {
     return NextResponse.json(
       { error: 'No connected Google account found. Connect a site with Google OAuth first.' },
@@ -57,8 +54,6 @@ export async function GET() {
     )
   }
 
-  console.log('[ga4-properties] siteId:', siteId)
-
   try {
     const oauth2Client = await getOAuthClient(siteId, ['ga4', 'gsc'])
     const analyticsAdmin = google.analyticsadmin({ version: 'v1beta', auth: oauth2Client })
@@ -74,13 +69,9 @@ export async function GET() {
       }))
     )
 
-    console.log('[ga4-properties] mapped properties:', JSON.stringify(properties))
     return NextResponse.json({ properties })
   } catch (err) {
     console.error('[ga4-properties] error:', JSON.stringify(err, Object.getOwnPropertyNames(err)))
-    return NextResponse.json({
-      error: err instanceof Error ? err.message : JSON.stringify(err),
-      stack: err instanceof Error ? err.stack : undefined,
-    }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch GA4 properties' }, { status: 500 })
   }
 }

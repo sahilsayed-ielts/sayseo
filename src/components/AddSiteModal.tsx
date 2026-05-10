@@ -89,9 +89,6 @@ export default function AddSiteModal({ isOpen, onClose, onSiteAdded }: Props) {
         ])
         const [ga4Data, gscData] = await Promise.all([ga4Res.json(), gscRes.json()])
 
-        console.log('ga4 response status:', ga4Res.status, 'ok:', ga4Res.ok)
-        console.log('ga4 data:', JSON.stringify(ga4Data))
-
         if (Array.isArray(ga4Data.properties)) {
           setGa4Properties(ga4Data.properties)
         }
