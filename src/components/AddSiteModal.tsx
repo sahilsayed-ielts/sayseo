@@ -63,41 +63,9 @@ export default function AddSiteModal({ isOpen, onClose, onSiteAdded }: Props) {
   const firstInputRef = useRef<HTMLInputElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
 
-  async function fetchGoogleData() {
-    setLoadingProperties(true)
-    setPropertiesError(null)
-    try {
-      const [ga4Res, gscRes] = await Promise.all([
-        fetch('/api/sites/ga4-properties'),
-        fetch('/api/sites/gsc-sites'),
-      ])
-      const [ga4Data, gscData] = await Promise.all([ga4Res.json(), gscRes.json()])
-
-      console.log('ga4 response status:', ga4Res.status, 'ok:', ga4Res.ok)
-      console.log('ga4 data:', JSON.stringify(ga4Data))
-
-      if (Array.isArray(ga4Data.properties)) {
-        setGa4Properties(ga4Data.properties)
-      }
-      if (gscRes.ok && Array.isArray(gscData.sites)) {
-        setGscSites(gscData.sites)
-      }
-      if (!ga4Res.ok && !gscRes.ok) {
-        setPropertiesError('Could not load Google data. Enter values manually below.')
-      }
-    } catch {
-      setPropertiesError('Could not load Google data. Enter values manually below.')
-    } finally {
-      setLoadingProperties(false)
-    }
-  }
-
   // Focus first input when modal opens; reset state and fetch Google data on open
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => firstInputRef.current?.focus(), 50)
-      fetchGoogleData()
-    } else {
+    if (!isOpen) {
       setDomain('')
       setGa4PropertyId('')
       setGscSiteUrl('')
@@ -106,8 +74,41 @@ export default function AddSiteModal({ isOpen, onClose, onSiteAdded }: Props) {
       setGscSites([])
       setLoadingProperties(false)
       setPropertiesError(null)
+      return
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    setTimeout(() => firstInputRef.current?.focus(), 50)
+
+    async function fetchGoogleData() {
+      setLoadingProperties(true)
+      setPropertiesError(null)
+      try {
+        const [ga4Res, gscRes] = await Promise.all([
+          fetch('/api/sites/ga4-properties'),
+          fetch('/api/sites/gsc-sites'),
+        ])
+        const [ga4Data, gscData] = await Promise.all([ga4Res.json(), gscRes.json()])
+
+        console.log('ga4 response status:', ga4Res.status, 'ok:', ga4Res.ok)
+        console.log('ga4 data:', JSON.stringify(ga4Data))
+
+        if (Array.isArray(ga4Data.properties)) {
+          setGa4Properties(ga4Data.properties)
+        }
+        if (gscRes.ok && Array.isArray(gscData.sites)) {
+          setGscSites(gscData.sites)
+        }
+        if (!ga4Res.ok && !gscRes.ok) {
+          setPropertiesError('Could not load Google data. Enter values manually below.')
+        }
+      } catch {
+        setPropertiesError('Could not load Google data. Enter values manually below.')
+      } finally {
+        setLoadingProperties(false)
+      }
+    }
+
+    fetchGoogleData()
   }, [isOpen])
 
   // ESC key closes modal
