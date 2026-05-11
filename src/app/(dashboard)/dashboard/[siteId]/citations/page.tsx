@@ -75,9 +75,16 @@ function StatCard({ label, value, accent }: { label: string; value: string; acce
 
 // ─── Platform breakdown ───────────────────────────────────────────────────────
 
+type CheckFallback = {
+  total: number
+  mentioned: number
+  lastChecked: string | null
+}
+
 function PlatformBreakdown({
   summaries,
   unavailablePlatforms,
+  checksFallback,
 }: {
   summaries: Array<{
     platform: string
@@ -86,6 +93,7 @@ function PlatformBreakdown({
     last_checked: string
   }>
   unavailablePlatforms: Set<string>
+  checksFallback: Record<string, CheckFallback>
 }) {
   const summaryMap = new Map(summaries.map((s) => [s.platform, s]))
 
@@ -114,11 +122,19 @@ function PlatformBreakdown({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
         {ALL_PLATFORMS.map((platform) => {
           const s = summaryMap.get(platform)
-          const rate = s && s.total_checks > 0
-            ? ((s.mention_count / s.total_checks) * 100).toFixed(1)
-            : '0.0'
+          const fallback = checksFallback[platform]
           const isUnavailable = unavailablePlatforms.has(platform)
-          const hasData = !!s
+
+          // Prefer citation_summary; fall back to citation_checks derived stats
+          const mentionCount = s?.mention_count ?? fallback?.mentioned ?? 0
+          const totalChecks = s?.total_checks ?? fallback?.total ?? 0
+          const lastCheckedIso = s?.last_checked ?? fallback?.lastChecked ?? null
+          const rate = totalChecks > 0
+            ? ((mentionCount / totalChecks) * 100).toFixed(1)
+            : '0.0'
+
+          // hasData = true if we have any row-level evidence of a run
+          const hasData = !!s || (fallback?.lastChecked != null)
 
           return (
             <div
@@ -144,9 +160,7 @@ function PlatformBreakdown({
                     display: 'inline-block',
                   }}
                 />
-                <span
-                  style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff' }}
-                >
+                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff' }}>
                   {PLATFORM_LABELS[platform]}
                 </span>
                 {isUnavailable && (
@@ -178,17 +192,19 @@ function PlatformBreakdown({
                   }}
                 >
                   <span>
-                    <strong style={{ color: '#00D4AA' }}>{s!.mention_count}</strong>{' '}
-                    / {s!.total_checks} checks
+                    <strong style={{ color: '#00D4AA' }}>{mentionCount}</strong>{' '}
+                    / {totalChecks} checks
                   </span>
                   <span>
                     <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{rate}%</strong> mention rate
                   </span>
-                  <span>Last checked {timeAgo(s!.last_checked)}</span>
+                  {lastCheckedIso && (
+                    <span>Last checked {timeAgo(lastCheckedIso)}</span>
+                  )}
                 </div>
               ) : (
                 <span style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.25)' }}>
-                  {isUnavailable ? 'Check failed' : 'Not yet checked'}
+                  Not yet checked
                 </span>
               )}
             </div>
@@ -223,7 +239,7 @@ export default async function CitationsPage({
       .select('id, query, platform, domain_mentioned, response_snippet, checked_at')
       .eq('site_id', siteId)
       .order('checked_at', { ascending: false })
-      .limit(50),
+      .limit(150),
     supabase
       .from('citation_summary')
       .select('platform, mention_count, total_checks, last_checked')
@@ -233,24 +249,44 @@ export default async function CitationsPage({
   const checks = checksResult.data ?? []
   const summaries = summaryResult.data ?? []
 
-  // Platforms that have checks but no summary row had consistent failures
-  const platformsWithChecks = new Set(checks.map((c) => c.platform))
+  // Per-platform fallback stats derived from citation_checks rows
+  // Used when citation_summary has no row for a platform (e.g. all checks errored)
+  const checksFallback: Record<string, CheckFallback> = {}
+  for (const check of checks) {
+    if (!checksFallback[check.platform]) {
+      checksFallback[check.platform] = { total: 0, mentioned: 0, lastChecked: null }
+    }
+    const isError = check.response_snippet === 'Check unavailable'
+    if (!isError) {
+      checksFallback[check.platform].total++
+      if (check.domain_mentioned) checksFallback[check.platform].mentioned++
+    }
+    // checks are sorted desc — first occurrence per platform = most recent checked_at
+    if (!checksFallback[check.platform].lastChecked) {
+      checksFallback[check.platform].lastChecked = check.checked_at
+    }
+  }
+
+  // Platforms that have citation_checks rows but no citation_summary row
   const platformsWithSummary = new Set(summaries.map((s) => s.platform))
   const unavailablePlatforms = new Set(
-    ALL_PLATFORMS.filter((p) => platformsWithChecks.has(p) && !platformsWithSummary.has(p))
+    Object.keys(checksFallback).filter((p) => !platformsWithSummary.has(p))
   )
+
+  // Issue 1 fix: count platforms with ANY citation_checks row, not just summary rows
+  const platformsChecked = new Set(checks.map((c) => c.platform)).size
 
   const totalMentioned = summaries.reduce((acc, s) => acc + s.mention_count, 0)
   const totalChecked = summaries.reduce((acc, s) => acc + s.total_checks, 0)
   const overallRate = totalChecked > 0
     ? ((totalMentioned / totalChecked) * 100).toFixed(1)
     : '0.0'
-  const platformsChecked = summaries.length
 
+  // Per-platform last-checked for run buttons — prefer summary, fall back to checks
   const platformLastChecked: Record<string, string | null> = {
-    claude: summaries.find((s) => s.platform === 'claude')?.last_checked ?? null,
-    chatgpt: summaries.find((s) => s.platform === 'chatgpt')?.last_checked ?? null,
-    gemini: summaries.find((s) => s.platform === 'gemini')?.last_checked ?? null,
+    claude: summaries.find((s) => s.platform === 'claude')?.last_checked ?? checksFallback['claude']?.lastChecked ?? null,
+    chatgpt: summaries.find((s) => s.platform === 'chatgpt')?.last_checked ?? checksFallback['chatgpt']?.lastChecked ?? null,
+    gemini: summaries.find((s) => s.platform === 'gemini')?.last_checked ?? checksFallback['gemini']?.lastChecked ?? null,
   }
 
   return (
@@ -304,7 +340,11 @@ export default async function CitationsPage({
       />
 
       {/* Platform breakdown */}
-      <PlatformBreakdown summaries={summaries} unavailablePlatforms={unavailablePlatforms} />
+      <PlatformBreakdown
+        summaries={summaries}
+        unavailablePlatforms={unavailablePlatforms}
+        checksFallback={checksFallback}
+      />
 
       {/* Query results table */}
       <CitationChecksTable checks={checks.slice(0, 30)} />
