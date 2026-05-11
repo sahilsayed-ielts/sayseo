@@ -172,7 +172,8 @@ export interface PlatformResult {
 export async function runCitationCheck(
   siteId: string,
   domain: string,
-  supabase: DbClient
+  supabase: DbClient,
+  platformFilter?: Platform
 ): Promise<{ checked: number; mentioned: number; platforms: PlatformResult[] }> {
   const { data: site } = await supabase
     .from('connected_sites')
@@ -234,7 +235,7 @@ export async function runCitationCheck(
     gemini: { checked: 0, mentioned: 0, available: false },
   }
 
-  const platforms: Platform[] = ['claude', 'chatgpt', 'gemini']
+  const platforms: Platform[] = platformFilter ? [platformFilter] : ['claude', 'chatgpt', 'gemini']
 
   for (let i = 0; i < queries.length; i++) {
     const query = queries[i]

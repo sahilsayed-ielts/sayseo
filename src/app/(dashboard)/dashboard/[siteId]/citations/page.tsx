@@ -247,11 +247,11 @@ export default async function CitationsPage({
     : '0.0'
   const platformsChecked = summaries.length
 
-  const lastChecked =
-    summaries.length > 0
-      ? new Date(Math.max(...summaries.map((s) => new Date(s.last_checked).getTime())))
-      : null
-  const canRun = true
+  const platformLastChecked: Record<string, string | null> = {
+    claude: summaries.find((s) => s.platform === 'claude')?.last_checked ?? null,
+    chatgpt: summaries.find((s) => s.platform === 'chatgpt')?.last_checked ?? null,
+    gemini: summaries.find((s) => s.platform === 'gemini')?.last_checked ?? null,
+  }
 
   return (
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: '2rem 1.5rem' }}>
@@ -296,12 +296,11 @@ export default async function CitationsPage({
         <StatCard label="Platforms Checked" value={`${platformsChecked} / 3`} />
       </div>
 
-      {/* Run button */}
+      {/* Run buttons */}
       <CitationRunButton
         siteId={siteId}
         domain={site.domain}
-        disabled={!canRun}
-        lastChecked={lastChecked?.toISOString() ?? null}
+        platformLastChecked={platformLastChecked}
       />
 
       {/* Platform breakdown */}
