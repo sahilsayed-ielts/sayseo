@@ -251,8 +251,7 @@ export default async function CitationsPage({
     summaries.length > 0
       ? new Date(Math.max(...summaries.map((s) => new Date(s.last_checked).getTime())))
       : null
-  const canRun =
-    !lastChecked || Date.now() - lastChecked.getTime() > 1 * 60 * 60 * 1000
+  const canRun = true
 
   return (
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: '2rem 1.5rem' }}>
