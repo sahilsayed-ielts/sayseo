@@ -107,6 +107,7 @@ async function checkQueryChatGPT(
     }),
   })
 
+  console.log('ChatGPT response status:', res.status)
   if (!res.ok) {
     const text = await res.text()
     throw new Error(`OpenAI API ${res.status}: ${text.slice(0, 200)}`)
@@ -139,6 +140,7 @@ async function checkQueryGemini(
     }
   )
 
+  console.log('Gemini response status:', res.status)
   if (!res.ok) {
     const text = await res.text()
     throw new Error(`Gemini API ${res.status}: ${text.slice(0, 200)}`)
@@ -217,6 +219,9 @@ export async function runCitationCheck(
     gemini: checkQueryGemini,
   }
 
+  console.log('OPENAI_API_KEY present:', !!process.env.OPENAI_API_KEY)
+  console.log('GEMINI_API_KEY present:', !!process.env.GEMINI_API_KEY)
+
   const keyMissing: Record<Platform, boolean> = {
     claude: !process.env.ANTHROPIC_API_KEY,
     chatgpt: !process.env.OPENAI_API_KEY,
@@ -245,6 +250,8 @@ export async function runCitationCheck(
           return { platform, ...result, error: false }
         } catch (err) {
           console.error(`[citations] ${platform} failed for "${query}":`, err)
+          if (platform === 'chatgpt') console.log('ChatGPT error:', JSON.stringify(err, Object.getOwnPropertyNames(err)))
+          if (platform === 'gemini') console.log('Gemini error:', JSON.stringify(err, Object.getOwnPropertyNames(err)))
           return { platform, domain_mentioned: false, response_snippet: 'Check unavailable', error: true }
         }
       })
