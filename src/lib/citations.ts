@@ -272,7 +272,7 @@ export async function runCitationCheck(
             domain_mentioned,
             checked_at: new Date().toISOString(),
           },
-          { onConflict: 'site_id,query,platform' }
+          { onConflict: 'site_id,query,platform', ignoreDuplicates: false }
         )
 
         if (!error) {
@@ -294,19 +294,12 @@ export async function runCitationCheck(
       const { checked, mentioned } = stats[platform]
       if (checked === 0) return
 
-      const { data: existing } = await supabase
-        .from('citation_summary')
-        .select('mention_count, total_checks')
-        .eq('site_id', siteId)
-        .eq('platform', platform)
-        .maybeSingle()
-
       await supabase.from('citation_summary').upsert(
         {
           site_id: siteId,
           platform,
-          mention_count: (existing?.mention_count ?? 0) + mentioned,
-          total_checks: (existing?.total_checks ?? 0) + checked,
+          mention_count: mentioned,
+          total_checks: checked,
           last_checked: new Date().toISOString(),
         },
         { onConflict: 'site_id,platform' }

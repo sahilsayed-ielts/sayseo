@@ -57,18 +57,43 @@ export default function CitationRunButton({ siteId, domain, platformLastChecked 
   const [errors, setErrors] = useState<Partial<Record<Platform, string>>>({})
 
   const runCheck = async (platform: Platform) => {
+    if (platform === 'all') {
+      setLoading('all')
+      setErrors({})
+      setResults({})
+
+      for (const p of INDIVIDUAL_PLATFORMS) {
+        try {
+          const res = await fetch('/api/citations/check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ siteId, domain, platform: p }),
+          })
+          const data = await res.json()
+          if (!res.ok) {
+            setErrors((prev) => ({ ...prev, [p]: data.error ?? 'Check failed. Please try again.' }))
+          } else {
+            setResults((prev) => ({ ...prev, [p]: data as RunResult }))
+          }
+        } catch {
+          setErrors((prev) => ({ ...prev, [p]: 'Network error. Please try again.' }))
+        }
+      }
+
+      router.refresh()
+      setLoading(null)
+      return
+    }
+
     setLoading(platform)
     setErrors((prev) => ({ ...prev, [platform]: undefined }))
     setResults((prev) => ({ ...prev, [platform]: undefined }))
 
     try {
-      const body: Record<string, string> = { siteId, domain }
-      if (platform !== 'all') body.platform = platform
-
       const res = await fetch('/api/citations/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ siteId, domain, platform }),
       })
       const data = await res.json()
 
