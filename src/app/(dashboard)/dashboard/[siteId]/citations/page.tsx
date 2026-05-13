@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import CitationRunButton from '@/components/dashboard/CitationRunButton'
@@ -223,6 +224,7 @@ export default async function CitationsPage({
   params: Promise<{ siteId: string }>
 }) {
   const { siteId } = await params
+  redirect(`/dashboard/${siteId}`) // temp: citations hidden
   const supabase = await createClient()
 
   const { data: site } = await supabase
