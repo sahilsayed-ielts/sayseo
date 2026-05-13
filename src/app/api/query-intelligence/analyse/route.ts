@@ -16,6 +16,8 @@ Return only valid JSON, no markdown, no preamble.`
 
 export async function POST(req: NextRequest) {
   const { runId, siteId } = await req.json()
+  console.log('[qi/analyse] received runId=%s siteId=%s', runId, siteId)
+
   if (!runId || !siteId) {
     return NextResponse.json({ error: 'runId and siteId are required' }, { status: 400 })
   }
@@ -34,10 +36,12 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   if (existing) {
+    console.log('[qi/analyse] returning cached analysis for runId=%s', runId)
     return NextResponse.json({ analysis: existing.analysis_json })
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
+    console.error('[qi/analyse] ANTHROPIC_API_KEY not set')
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 503 })
   }
 
@@ -48,14 +52,19 @@ export async function POST(req: NextRequest) {
     .order('impressions', { ascending: false })
     .limit(200)
 
+  console.log('[qi/analyse] fetched %d result rows for runId=%s (fetchErr=%s)', results?.length ?? 0, runId, fetchErr?.message ?? 'none')
+
   if (fetchErr || !results) {
+    console.error('[qi/analyse] Supabase fetch error:', fetchErr)
     return NextResponse.json({ error: 'Failed to fetch run results' }, { status: 500 })
   }
 
   const client = new Anthropic()
 
   let analysis: unknown
+  let raw = ''
   try {
+    console.log('[qi/analyse] calling Claude with %d rows', results.length)
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
@@ -74,11 +83,17 @@ export async function POST(req: NextRequest) {
       ],
     })
 
-    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+    console.log('[qi/analyse] Claude stop_reason=%s content_blocks=%d', message.stop_reason, message.content.length)
+    raw = message.content[0].type === 'text' ? message.content[0].text : ''
+    console.log('[qi/analyse] raw response (first 500 chars):', raw.slice(0, 500))
+
     const jsonStr = raw.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '').trim()
     analysis = JSON.parse(jsonStr)
+    console.log('[qi/analyse] JSON parsed successfully, top-level keys:', Object.keys(analysis as object))
   } catch (err) {
-    console.error('[query-intelligence/analyse]', err)
+    const errMsg = err instanceof Error ? err.message : String(err)
+    const status = (err as { status?: number }).status
+    console.error('[qi/analyse] error — message: %s | status: %s | raw response: %s', errMsg, status ?? 'n/a', raw.slice(0, 1000))
     return NextResponse.json({ error: 'Intelligent analysis failed' }, { status: 500 })
   }
 
