@@ -13,6 +13,7 @@ interface Props {
 
 interface RunResult {
   checked: number
+  queriesAttempted: number
   mentioned: number
   platforms: Array<{ platform: string; checked: number; mentioned: number; available: boolean }>
 }
@@ -232,30 +233,67 @@ export default function CitationRunButton({ siteId, domain, platformLastChecked 
                   {err}
                 </div>
               )}
-              {result && (
-                <div
-                  style={{
-                    padding: '0.625rem 0.875rem',
-                    borderRadius: '0.5rem',
-                    backgroundColor: 'rgba(0,212,170,0.08)',
-                    border: '1px solid rgba(0,212,170,0.2)',
-                    fontSize: '0.8125rem',
-                  }}
-                >
-                  <span style={{ color: '#00D4AA', fontWeight: 600 }}>
-                    {platform !== 'all' && `${PLATFORM_LABELS[platform]}: `}
-                    {result.mentioned} mention{result.mentioned !== 1 ? 's' : ''} across{' '}
-                    {result.checked} {result.checked !== 1 ? 'queries' : 'query'}
-                  </span>
-                  {platform === 'all' && result.platforms.length > 0 && (
-                    <span style={{ color: 'rgba(255,255,255,0.4)', marginLeft: '0.5rem' }}>
-                      ({result.platforms.map((p) =>
-                        p.available ? `${PLATFORM_LABELS[p.platform]}: ${p.mentioned}/${p.checked}` : `${PLATFORM_LABELS[p.platform]}: unavailable`
-                      ).join(' · ')})
-                    </span>
-                  )}
-                </div>
-              )}
+              {result && (() => {
+                // For individual platform runs, pull the per-platform stats
+                const platformStats = platform !== 'all'
+                  ? result.platforms.find((p) => p.platform === platform)
+                  : null
+                const isUnavailable = platformStats ? !platformStats.available : false
+                const checked = platformStats ? platformStats.checked : result.checked
+                const mentioned = platformStats ? platformStats.mentioned : result.mentioned
+                const allUnavailable = platform === 'all' && result.platforms.every((p) => !p.available)
+
+                if (isUnavailable || (platform !== 'all' && checked === 0)) {
+                  return (
+                    <div
+                      style={{
+                        padding: '0.625rem 0.875rem',
+                        borderRadius: '0.5rem',
+                        backgroundColor: 'rgba(239,68,68,0.08)',
+                        border: '1px solid rgba(239,68,68,0.2)',
+                        fontSize: '0.8125rem',
+                        color: '#fca5a5',
+                      }}
+                    >
+                      {platform !== 'all' && <strong style={{ color: '#f87171' }}>{PLATFORM_LABELS[platform]}: </strong>}
+                      API key not configured or check failed — no data saved
+                    </div>
+                  )
+                }
+
+                return (
+                  <div
+                    style={{
+                      padding: '0.625rem 0.875rem',
+                      borderRadius: '0.5rem',
+                      backgroundColor: allUnavailable ? 'rgba(239,68,68,0.08)' : 'rgba(0,212,170,0.08)',
+                      border: `1px solid ${allUnavailable ? 'rgba(239,68,68,0.2)' : 'rgba(0,212,170,0.2)'}`,
+                      fontSize: '0.8125rem',
+                    }}
+                  >
+                    {platform !== 'all' && (
+                      <span style={{ color: '#00D4AA', fontWeight: 600 }}>
+                        {PLATFORM_LABELS[platform]}: {mentioned} mention{mentioned !== 1 ? 's' : ''} across {checked} {checked !== 1 ? 'queries' : 'query'}
+                      </span>
+                    )}
+                    {platform === 'all' && result.platforms.length > 0 && (
+                      <span style={{ fontSize: '0.8125rem' }}>
+                        {result.platforms.map((p, i) => (
+                          <span key={p.platform}>
+                            {i > 0 && <span style={{ color: 'rgba(255,255,255,0.2)', margin: '0 0.375rem' }}>·</span>}
+                            <strong style={{ color: p.available ? '#00D4AA' : '#f87171' }}>
+                              {PLATFORM_LABELS[p.platform]}
+                            </strong>
+                            <span style={{ color: 'rgba(255,255,255,0.5)', marginLeft: '0.3rem' }}>
+                              {p.available ? `${p.mentioned}/${p.checked}` : 'unavailable'}
+                            </span>
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
           )
         })}

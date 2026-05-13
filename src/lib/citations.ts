@@ -174,7 +174,7 @@ export async function runCitationCheck(
   domain: string,
   supabase: DbClient,
   platformFilter?: Platform
-): Promise<{ checked: number; mentioned: number; platforms: PlatformResult[] }> {
+): Promise<{ checked: number; queriesAttempted: number; mentioned: number; platforms: PlatformResult[] }> {
   const { data: site } = await supabase
     .from('connected_sites')
     .select('gsc_site_url')
@@ -243,16 +243,15 @@ export async function runCitationCheck(
     const settled = await Promise.allSettled(
       platforms.map(async (platform) => {
         if (keyMissing[platform]) {
-          console.error(`[citations] ${platform} API key missing`)
+          console.error(`[citations] ${platform} API key missing — skipping query "${query}"`)
           return { platform, domain_mentioned: false, response_snippet: 'Check unavailable', error: true }
         }
         try {
           const result = await checkers[platform](query, domain)
           return { platform, ...result, error: false }
         } catch (err) {
-          console.error(`[citations] ${platform} failed for "${query}":`, err)
-          if (platform === 'chatgpt') console.log('ChatGPT error:', JSON.stringify(err, Object.getOwnPropertyNames(err)))
-          if (platform === 'gemini') console.log('Gemini error:', JSON.stringify(err, Object.getOwnPropertyNames(err)))
+          const msg = err instanceof Error ? err.message : String(err)
+          console.error(`[citations] ${platform} API call failed for "${query}": ${msg}`)
           return { platform, domain_mentioned: false, response_snippet: 'Check unavailable', error: true }
         }
       })
@@ -263,7 +262,7 @@ export async function runCitationCheck(
         if (s.status === 'rejected') return
         const { platform, domain_mentioned, response_snippet, error } = s.value
 
-        await supabase.from('citation_checks').upsert(
+        const { error: upsertErr } = await supabase.from('citation_checks').upsert(
           {
             site_id: siteId,
             query,
@@ -274,6 +273,10 @@ export async function runCitationCheck(
           },
           { onConflict: 'site_id,query,platform', ignoreDuplicates: false }
         )
+
+        if (upsertErr) {
+          console.error(`[citations] citation_checks upsert failed for ${platform}/"${query}": ${upsertErr.message} (code=${upsertErr.code})`)
+        }
 
         if (!error) {
           stats[platform].checked++
@@ -288,13 +291,16 @@ export async function runCitationCheck(
     }
   }
 
-  // Update citation_summary only for platforms that successfully ran
+  // Update citation_summary for all platforms that successfully ran
   await Promise.all(
     platforms.map(async (platform) => {
       const { checked, mentioned } = stats[platform]
-      if (checked === 0) return
+      if (checked === 0) {
+        console.warn(`[citations] skipping citation_summary update for ${platform} — 0 successful checks`)
+        return
+      }
 
-      await supabase.from('citation_summary').upsert(
+      const { error: summaryErr } = await supabase.from('citation_summary').upsert(
         {
           site_id: siteId,
           platform,
@@ -304,13 +310,19 @@ export async function runCitationCheck(
         },
         { onConflict: 'site_id,platform' }
       )
+
+      if (summaryErr) {
+        console.error(`[citations] citation_summary upsert failed for ${platform}: ${summaryErr.message} (code=${summaryErr.code})`)
+      }
     })
   )
 
   const totalMentioned = platforms.reduce((acc, p) => acc + stats[p].mentioned, 0)
+  const totalChecked = platforms.reduce((acc, p) => acc + stats[p].checked, 0)
 
   return {
-    checked: queries.length,
+    checked: totalChecked,
+    queriesAttempted: queries.length,
     mentioned: totalMentioned,
     platforms: platforms.map((p) => ({ platform: p, ...stats[p] })),
   }
