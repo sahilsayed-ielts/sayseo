@@ -12,7 +12,10 @@ const SYSTEM_PROMPT = `You are an expert SEO strategist. Analyse this Google Sea
   "ctr_optimisation": [{ "query": string, "page": string, "position": number, "current_ctr": number, "reason": string, "recommended_action": string }],
   "summary": { "total_queries": number, "total_pages": number, "avg_position": number, "top_opportunity": string }
 }
-Return only valid JSON, no markdown, no preamble.`
+Rules:
+- Return at most 15 items per array (pick the highest-impact ones).
+- Return only valid JSON. No markdown, no preamble, no trailing text.
+- Ensure the JSON is complete and properly closed before finishing.`
 
 export async function POST(req: NextRequest) {
   const { runId, siteId } = await req.json()
@@ -67,7 +70,7 @@ export async function POST(req: NextRequest) {
     console.log('[qi/analyse] calling Claude with %d rows', results.length)
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: [
         {
           type: 'text',
