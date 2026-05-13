@@ -224,7 +224,9 @@ export default async function CitationsPage({
   params: Promise<{ siteId: string }>
 }) {
   const { siteId } = await params
-  redirect(`/dashboard/${siteId}`) // temp: citations hidden
+  // temp: citations hidden — remove the next two lines to re-enable
+  const _citationsHidden = true as boolean
+  if (_citationsHidden) { redirect(`/dashboard/${siteId}`) }
   const supabase = await createClient()
 
   const { data: site } = await supabase
@@ -248,12 +250,12 @@ export default async function CitationsPage({
       .eq('site_id', siteId),
   ])
 
-  const checks = checksResult.data ?? []
-  const summaries = summaryResult.data ?? []
+  const checks = (checksResult.data ?? []) as Array<{ id: string; query: string; platform: string; domain_mentioned: boolean; response_snippet: string | null; checked_at: string }>
+  const summaries = (summaryResult.data ?? []) as Array<{ platform: string; mention_count: number; total_checks: number; last_checked: string }>
 
   // Per-platform fallback stats derived from citation_checks rows
   // Used when citation_summary has no row for a platform (e.g. all checks errored)
-  const checksFallback: Record<string, CheckFallback> = {}
+  const checksFallback: Record<string, { total: number; mentioned: number; lastChecked: string | null }> = {}
   for (const check of checks) {
     if (!checksFallback[check.platform]) {
       checksFallback[check.platform] = { total: 0, mentioned: 0, lastChecked: null }
