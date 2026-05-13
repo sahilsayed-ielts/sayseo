@@ -11,6 +11,7 @@ export default function SiteTabNav({ siteId }: { siteId: string }) {
     // { label: 'Citations', href: `/dashboard/${siteId}/citations` },
     { label: 'AI Overviews', href: `/dashboard/${siteId}/ai-overviews` },
     { label: 'Query Intel', href: `/dashboard/${siteId}/query-intelligence` },
+    { label: 'GA4 Intel', href: `/dashboard/${siteId}/ga4-intel` },
     { label: 'Score', href: `/dashboard/${siteId}/score` },
     { label: 'Recommendations', href: `/dashboard/${siteId}/recommendations` },
     { label: 'Competitors', href: `/dashboard/${siteId}/competitors` },
