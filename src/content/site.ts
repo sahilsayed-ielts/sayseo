@@ -1,5 +1,5 @@
 export const siteConfig = {
-  name: "sayseo",
+  name: "SaySEO",
   domainLabel: "sayseo.co.uk",
   url: "https://sayseo.co.uk",
   email: "hello@sayseo.com",
@@ -8,7 +8,7 @@ export const siteConfig = {
   baseLocation: "London, United Kingdom",
   serviceRegions: ["United Kingdom", "India"],
   description:
-    "sayseo is a UK-based SEO education, tools, and task platform for website owners, publishers, ecommerce teams, marketers, and agencies that want to learn SEO, use practical tools, and buy clearly scoped SEO work.",
+    "Track when ChatGPT, Gemini, and Perplexity cite your website. Monitor AI-generated traffic, citation mentions, and Google AI Overviews — all in one dashboard.",
 };
 
 export const navigation = [

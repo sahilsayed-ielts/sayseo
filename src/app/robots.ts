@@ -1,13 +1,13 @@
-import type { MetadataRoute } from "next";
-import { siteConfig } from "@/content/site";
+import type { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
-      userAgent: "*",
-      allow: "/",
+      userAgent: '*',
+      allow: '/',
+      disallow: ['/dashboard', '/onboarding', '/api/'],
     },
-    sitemap: `${siteConfig.url}/sitemap.xml`,
-    host: siteConfig.url,
-  };
+    sitemap: 'https://sayseo.co.uk/sitemap.xml',
+    host: 'https://sayseo.co.uk',
+  }
 }

@@ -19,15 +19,37 @@ export async function getOAuthClient(siteId: string, providers: Provider[]) {
   const admin = createAdminClient()
 
   // Load from the first available provider — all providers share the same OAuth grant
-  const { data: token, error } = await admin
+  const { data: oauthToken } = await admin
     .from('oauth_tokens')
     .select('access_token, refresh_token, expires_at')
     .eq('site_id', siteId)
     .in('provider', providers)
     .limit(1)
-    .single<StoredToken>()
+    .maybeSingle<StoredToken>()
 
-  if (error || !token) {
+  let token = oauthToken
+
+  if (!token) {
+    const { data: siteToken } = await admin
+      .from('connected_sites')
+      .select('access_token, refresh_token, token_expiry')
+      .eq('id', siteId)
+      .maybeSingle<{
+        access_token: string | null
+        refresh_token: string | null
+        token_expiry: string | null
+      }>()
+
+    if (siteToken?.access_token) {
+      token = {
+        access_token: siteToken.access_token,
+        refresh_token: siteToken.refresh_token,
+        expires_at: siteToken.token_expiry,
+      }
+    }
+  }
+
+  if (!token) {
     throw new Error('reconnect_required')
   }
 
@@ -55,6 +77,16 @@ export async function getOAuthClient(siteId: string, providers: Provider[]) {
       .update(updates)
       .eq('site_id', siteId)
       .in('provider', providers)
+
+    await admin
+      .from('connected_sites')
+      .update({
+        ...(newTokens.access_token ? { access_token: newTokens.access_token } : {}),
+        ...(newTokens.expiry_date
+          ? { token_expiry: new Date(newTokens.expiry_date).toISOString() }
+          : {}),
+      })
+      .eq('id', siteId)
   })
 
   return oauth2Client
