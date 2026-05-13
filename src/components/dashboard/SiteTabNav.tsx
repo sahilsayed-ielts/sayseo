@@ -8,7 +8,7 @@ export default function SiteTabNav({ siteId }: { siteId: string }) {
 
   const tabs = [
     { label: 'Overview', href: `/dashboard/${siteId}` },
-    { label: 'Citations', href: `/dashboard/${siteId}/citations` },
+    // { label: 'Citations', href: `/dashboard/${siteId}/citations` },
     { label: 'AI Overviews', href: `/dashboard/${siteId}/ai-overviews` },
     { label: 'Query Intel', href: `/dashboard/${siteId}/query-intelligence` },
     { label: 'Score', href: `/dashboard/${siteId}/score` },
