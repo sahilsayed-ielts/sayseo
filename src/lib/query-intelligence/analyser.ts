@@ -282,20 +282,25 @@ export function analyse(input: AnalyseInput): QIAnalysis {
   const totalClicks = queries.reduce((s, q) => s + q.clicks, 0)
   const totalImpressions = queries.reduce((s, q) => s + q.impressions, 0)
   const avgCtr = totalImpressions > 0 ? totalClicks / totalImpressions : 0
-  const avgPosition = avg(queries.map(q => q.position))
+  // Impression-weighted average position — matches how GSC calculates it
+  const avgPosition = totalImpressions > 0
+    ? queries.reduce((s, q) => s + q.position * q.impressions, 0) / totalImpressions
+    : avg(queries.map(q => q.position))
 
   // ── Position buckets ────────────────────────────────────────────────────────
+  // Use strict < boundaries so decimal positions (e.g. 3.6, 10.9) never fall
+  // between buckets; exclude position=0 which means GSC had no data.
 
   const bucketDefs = [
-    { label: 'Top 3', range: '1–3', from: 1, to: 3 },
-    { label: 'Page 1', range: '4–10', from: 4, to: 10 },
-    { label: 'Page 2', range: '11–20', from: 11, to: 20 },
-    { label: 'Pages 3–5', range: '21–50', from: 21, to: 50 },
-    { label: 'Deep', range: '51+', from: 51, to: Infinity },
+    { label: 'Top 3',     range: '1–3',   test: (p: number) => p > 0 && p < 4  },
+    { label: 'Page 1',    range: '4–10',  test: (p: number) => p >= 4 && p < 11 },
+    { label: 'Page 2',    range: '11–20', test: (p: number) => p >= 11 && p < 21 },
+    { label: 'Pages 3–5', range: '21–50', test: (p: number) => p >= 21 && p < 51 },
+    { label: 'Deep',      range: '51+',   test: (p: number) => p >= 51 },
   ]
 
   const position_buckets: PositionBucket[] = bucketDefs.map(def => {
-    const bucket = queries.filter(q => q.position >= def.from && q.position <= def.to)
+    const bucket = queries.filter(q => def.test(q.position))
     const bImpressions = bucket.reduce((s, q) => s + q.impressions, 0)
     const bClicks = bucket.reduce((s, q) => s + q.clicks, 0)
     return {
@@ -305,7 +310,9 @@ export function analyse(input: AnalyseInput): QIAnalysis {
       impressions: bImpressions,
       clicks: bClicks,
       avg_ctr: bImpressions > 0 ? bClicks / bImpressions : 0,
-      avg_position: bucket.length > 0 ? avg(bucket.map(q => q.position)) : 0,
+      avg_position: bImpressions > 0
+        ? bucket.reduce((s, q) => s + q.position * q.impressions, 0) / bImpressions
+        : avg(bucket.map(q => q.position)),
     }
   })
 

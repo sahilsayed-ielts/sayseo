@@ -96,7 +96,9 @@ function parseCtr(val: string): number {
   const clean = val.replace('%', '').trim()
   const n = parseFloat(clean)
   if (isNaN(n)) return 0
-  return n > 1 ? n / 100 : n
+  // GSC always exports CTR as a percentage string ("0.23%", "17.86%")
+  // so always divide by 100 — the > 1 check was wrong for sub-1% values
+  return n / 100
 }
 
 function parseQueryCsv(text: string): { rows: QueryRow[]; hasComparison: boolean } {
