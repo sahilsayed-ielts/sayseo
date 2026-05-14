@@ -69,15 +69,9 @@ export async function POST(req: NextRequest) {
   try {
     console.log('[qi/analyse] calling Claude with %d rows', results.length)
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 8192,
-      system: [
-        {
-          type: 'text',
-          text: SYSTEM_PROMPT,
-          cache_control: { type: 'ephemeral' },
-        },
-      ],
+      system: SYSTEM_PROMPT,
       messages: [
         {
           role: 'user',

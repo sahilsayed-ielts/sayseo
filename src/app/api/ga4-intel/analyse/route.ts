@@ -71,9 +71,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 8192,
-      system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+      system: SYSTEM_PROMPT,
       messages: [{
         role: 'user',
         content: `Analyse this GA4 page performance data (${results.length} rows, sorted by sessions descending):\n\n${JSON.stringify(results)}`,
