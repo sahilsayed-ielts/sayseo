@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import type { QIAnalysis, QuickWin, CTROpportunity, ContentGap, FeaturedSnippetOpp, LongTailOpp, TopPerformer, TopicCluster, PageAnalysis } from '@/lib/query-intelligence/analyser'
+import type { QIAnalysis, QuickWin, CTROpportunity, ContentGap, FeaturedSnippetOpp, LongTailOpp, TopPerformer, TopicCluster, PageAnalysis, KeywordGroup, ContentMapAnalysis, AiOpportunity } from '@/lib/query-intelligence/analyser'
 import type { QueryRow, PageRow } from '@/lib/query-intelligence/analyser'
 
 // ─── Re-export for server component ──────────────────────────────────────────
@@ -59,6 +59,26 @@ function fmtDate(iso: string): string {
 
 function fmtRunDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+// ─── Filename date detection ──────────────────────────────────────────────────
+
+const MONTH_MAP: Record<string, string> = {
+  jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+  jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12',
+}
+
+function detectDatesFromFilename(filename: string): { from: string; to: string } | null {
+  const PAT = /(\d{1,2})\s+(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{4})/gi
+  const matches = [...filename.matchAll(PAT)]
+  if (matches.length < 2) return null
+  const toISO = (m: RegExpMatchArray) => {
+    const mo = MONTH_MAP[m[2].toLowerCase().slice(0, 3)]
+    return mo ? `${m[3]}-${mo}-${m[1].padStart(2, '0')}` : ''
+  }
+  const from = toISO(matches[0])
+  const to   = toISO(matches[1])
+  return from && to ? { from, to } : null
 }
 
 // ─── CSV parsing ──────────────────────────────────────────────────────────────
@@ -278,7 +298,7 @@ function TR({ children, highlight, last }: { children: React.ReactNode; highligh
 
 // ─── Tab system ───────────────────────────────────────────────────────────────
 
-type TabId = 'overview' | 'quick_wins' | 'ctr' | 'gaps' | 'snippets' | 'longtail' | 'performers' | 'clusters' | 'comparison' | 'pages'
+type TabId = 'overview' | 'quick_wins' | 'ctr' | 'gaps' | 'snippets' | 'longtail' | 'performers' | 'clusters' | 'comparison' | 'pages' | 'keyword_groups' | 'content_map' | 'ai_opps'
 
 interface TabDef { id: TabId; label: string; color: string; count?: number; hidden?: boolean }
 
@@ -628,6 +648,231 @@ function PagesPanel({ items }: { items: PageAnalysis[] }) {
   )
 }
 
+// ─── New analysis panels ──────────────────────────────────────────────────────
+
+const INTENT_COLORS: Record<string, string> = {
+  informational: C.purple,
+  commercial:    C.amber,
+  transactional: C.green,
+  navigational:  C.orange,
+  mixed:         'rgba(255,255,255,0.35)',
+}
+
+function KeywordGroupsPanel({ items }: { items: KeywordGroup[] }) {
+  const [expanded, setExpanded] = useState<string | null>(null)
+  if (!items.length) return <EmptyState msg="No keyword groups found in this data." />
+  return (
+    <div style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      {items.map(g => {
+        const isOpen = expanded === g.parent_topic
+        return (
+          <div key={g.parent_topic} style={{ border: `1px solid ${C.border}`, borderRadius: '0.625rem', overflow: 'hidden' }}>
+            <button onClick={() => setExpanded(isOpen ? null : g.parent_topic)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.875rem 1rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: C.text }}>{g.parent_topic}</span>
+                  <Badge label={g.intent} color={INTENT_COLORS[g.intent] ?? C.muted} />
+                  <span style={{ fontSize: '0.7rem', color: C.muted }}>{g.query_count} quer{g.query_count === 1 ? 'y' : 'ies'}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.72rem', color: C.muted }}>{fmtNum(g.total_impressions)} impr</span>
+                  <span style={{ fontSize: '0.72rem', color: C.accent }}>{fmtNum(g.total_clicks)} clicks</span>
+                  <span style={{ fontSize: '0.72rem', color: C.muted }}>avg pos {Number(g.avg_position).toFixed(1)}</span>
+                  <span style={{ fontSize: '0.72rem', color: C.muted }}>{fmtPct(g.avg_ctr)} CTR</span>
+                </div>
+              </div>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} aria-hidden><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            {isOpen && (
+              <div style={{ borderTop: `1px solid ${C.border}`, padding: '0.75rem 1rem' }}>
+                <p style={{ fontSize: '0.78rem', color: C.amber, margin: '0 0 0.75rem', fontStyle: 'italic' }}>{g.recommended_action}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  {g.queries.map((q, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.3rem 0.5rem', borderRadius: '0.3rem', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                      <span style={{ flex: 1, fontSize: '0.8rem', color: C.text }}>{q.query}</span>
+                      <Badge label={q.intent} color={INTENT_COLORS[q.intent] ?? C.muted} />
+                      <span style={{ fontSize: '0.7rem', color: C.muted, minWidth: 48, textAlign: 'right' }}>pos {Number(q.position).toFixed(1)}</span>
+                      <span style={{ fontSize: '0.7rem', color: C.muted, minWidth: 62, textAlign: 'right' }}>{fmtNum(q.impressions)} impr</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function ContentMapPanel({ data }: { data: ContentMapAnalysis }) {
+  const [expandedPage, setExpandedPage] = useState<string | null>(null)
+  const [section, setSection] = useState<'pages' | 'orphans' | 'suggested'>('pages')
+
+  const subs: { id: typeof section; label: string }[] = [
+    { id: 'pages',     label: `Mapped Pages (${data.mapped_pages.length})` },
+    { id: 'orphans',   label: `Orphan Queries (${data.orphan_queries.length})` },
+    { id: 'suggested', label: `New Page Ideas (${data.suggested_pages.length})` },
+  ]
+
+  return (
+    <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '0.75rem' }}>
+        {[
+          { label: 'Coverage',        value: `${data.coverage_pct.toFixed(1)}%`,      sub: 'impressions mapped',           accent: true },
+          { label: 'Mapped Pages',    value: fmtNum(data.mapped_pages.length),          sub: 'pages with queries'                        },
+          { label: 'Orphan Queries',  value: fmtNum(data.orphan_queries.length),        sub: 'no dedicated page'                         },
+          { label: 'New Page Ideas',  value: fmtNum(data.suggested_pages.length),       sub: 'recommended pages',            accent: true },
+        ].map(it => (
+          <div key={it.label} style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: `1px solid ${it.accent ? C.borderAccent : C.border}`, borderRadius: '0.625rem', padding: '0.875rem 1rem' }}>
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.muted, margin: '0 0 0.25rem' }}>{it.label}</p>
+            <p style={{ fontSize: '1.375rem', fontWeight: 800, color: it.accent ? C.accent : C.text, margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>{it.value}</p>
+            {it.sub && <p style={{ fontSize: '0.68rem', color: C.faint, margin: '0.2rem 0 0' }}>{it.sub}</p>}
+          </div>
+        ))}
+      </div>
+
+      {/* Sub-navigation */}
+      <div style={{ display: 'flex', gap: '0.35rem', borderBottom: `1px solid ${C.border}` }}>
+        {subs.map(s => (
+          <button key={s.id} onClick={() => setSection(s.id)} style={{ padding: '0.5rem 0.875rem', fontSize: '0.8rem', fontWeight: section === s.id ? 700 : 500, color: section === s.id ? C.accent : C.muted, background: 'none', border: 'none', borderBottom: `2px solid ${section === s.id ? C.accent : 'transparent'}`, marginBottom: '-1px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Mapped pages */}
+      {section === 'pages' && (
+        data.mapped_pages.length === 0
+          ? <EmptyState msg="No pages were matched to queries. Upload a Pages CSV for full mapping." />
+          : <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              {data.mapped_pages.map(p => {
+                const isOpen = expandedPage === p.page
+                return (
+                  <div key={p.page} style={{ border: `1px solid ${C.border}`, borderRadius: '0.625rem', overflow: 'hidden' }}>
+                    <button onClick={() => setExpandedPage(isOpen ? null : p.page)} style={{ width: '100%', display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.875rem 1rem', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: C.accent, margin: '0 0 0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{truncUrl(p.page, 60)}</p>
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '0.7rem', color: C.muted }}>{p.mapped_queries.length} queries matched</span>
+                          <span style={{ fontSize: '0.7rem', color: C.muted }}>{fmtNum(p.page_impressions)} impr</span>
+                          <span style={{ fontSize: '0.7rem', color: C.accent }}>{fmtNum(p.page_clicks)} clicks</span>
+                          <span style={{ fontSize: '0.7rem', color: C.muted }}>pos {Number(p.page_position).toFixed(1)}</span>
+                        </div>
+                      </div>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0, marginTop: 3 }} aria-hidden><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    {isOpen && (
+                      <div style={{ borderTop: `1px solid ${C.border}`, padding: '0.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                        {p.mapped_queries.map((q, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.3rem 0.4rem', borderRadius: '0.3rem', backgroundColor: 'rgba(255,255,255,0.015)' }}>
+                            <span style={{ flex: 1, fontSize: '0.78rem', color: C.text }}>{q.query}</span>
+                            <Badge label={q.intent} color={INTENT_COLORS[q.intent] ?? C.muted} />
+                            <span style={{ fontSize: '0.68rem', color: C.muted, minWidth: 48, textAlign: 'right' }}>pos {Number(q.position).toFixed(1)}</span>
+                            <span style={{ fontSize: '0.68rem', color: C.muted, minWidth: 58, textAlign: 'right' }}>{fmtNum(q.impressions)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+      )}
+
+      {/* Orphan queries */}
+      {section === 'orphans' && (
+        data.orphan_queries.length === 0
+          ? <EmptyState msg="All queries are mapped to a page." />
+          : <DataTable headers={['Query', 'Intent', 'Impressions', 'Clicks', 'Position', 'CTR']}>
+              {data.orphan_queries.map((q, i) => (
+                <TR key={i} last={i === data.orphan_queries.length - 1}>
+                  <td style={{ ...TD, maxWidth: 260, fontWeight: 500 }}>{q.query}</td>
+                  <td style={TD}><Badge label={q.intent} color={INTENT_COLORS[q.intent] ?? C.muted} /></td>
+                  <td style={{ ...TD, fontWeight: 700 }}>{fmtNum(q.impressions)}</td>
+                  <td style={{ ...TD, color: C.accent }}>{fmtNum(q.clicks)}</td>
+                  <td style={TD}>{Number(q.position).toFixed(1)}</td>
+                  <td style={{ ...TD, color: C.muted }}>{fmtPct(q.ctr)}</td>
+                </TR>
+              ))}
+            </DataTable>
+      )}
+
+      {/* Suggested pages */}
+      {section === 'suggested' && (
+        data.suggested_pages.length === 0
+          ? <EmptyState msg="No new page recommendations at this time." />
+          : <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              {data.suggested_pages.map((p, i) => (
+                <div key={i} style={{ border: `1px solid ${p.priority === 'high' ? C.borderAccent : C.border}`, borderRadius: '0.625rem', padding: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: C.text }}>{p.suggested_title}</span>
+                        <Badge label={p.priority === 'high' ? 'High Priority' : 'Medium'} color={p.priority === 'high' ? C.accent : C.amber} />
+                        <Badge label={p.intent} color={INTENT_COLORS[p.intent] ?? C.muted} />
+                      </div>
+                      <p style={{ fontSize: '0.72rem', color: C.faint, margin: '0.2rem 0 0', fontFamily: 'monospace' }}>{p.suggested_slug}</p>
+                    </div>
+                    <span style={{ fontSize: '1rem', fontWeight: 800, color: C.accent, whiteSpace: 'nowrap' }}>{fmtNum(p.total_impressions)}<span style={{ fontSize: '0.68rem', color: C.muted, fontWeight: 400, marginLeft: '0.2rem' }}>impr</span></span>
+                  </div>
+                  <p style={{ fontSize: '0.78rem', color: C.muted, margin: '0 0 0.5rem' }}>{p.reason}</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                    {p.target_queries.slice(0, 6).map((q, j) => (
+                      <span key={j} style={{ fontSize: '0.68rem', color: C.faint, backgroundColor: 'rgba(255,255,255,0.04)', padding: '0.15rem 0.5rem', borderRadius: '0.25rem', border: `1px solid rgba(255,255,255,0.06)` }}>{q}</span>
+                    ))}
+                    {p.target_queries.length > 6 && <span style={{ fontSize: '0.68rem', color: C.faint }}>+{p.target_queries.length - 6} more</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+      )}
+    </div>
+  )
+}
+
+const AI_TYPE_LABELS: Record<string, string> = {
+  ai_overview: 'AI Overview', how_to: 'How-To', comparison: 'Comparison',
+  definition: 'Definition', list: 'List / Best', faq: 'FAQ',
+}
+const AI_TYPE_COLORS: Record<string, string> = {
+  ai_overview: C.purple, how_to: C.accent, comparison: C.amber,
+  definition: C.orange, list: '#EC4899', faq: C.purple,
+}
+
+function AiOppsPanel({ items }: { items: AiOpportunity[] }) {
+  if (!items.length) return <EmptyState msg="No AI traffic opportunities detected in this data." />
+  return (
+    <div style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      {items.map((opp, i) => (
+        <div key={i} style={{ border: `1px solid ${opp.score === 'high' ? C.borderAccent : C.border}`, borderRadius: '0.625rem', padding: '0.875rem 1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.5rem' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
+                <Badge label={AI_TYPE_LABELS[opp.ai_type] ?? opp.ai_type} color={AI_TYPE_COLORS[opp.ai_type] ?? C.muted} />
+                <Badge label={opp.score === 'high' ? 'High' : 'Medium'} color={opp.score === 'high' ? C.accent : C.amber} />
+              </div>
+              <p style={{ fontSize: '0.875rem', fontWeight: 700, color: C.text, margin: '0 0 0.15rem' }}>{opp.query}</p>
+              {opp.mapped_page && <p style={{ fontSize: '0.7rem', color: C.muted, margin: 0 }}>{truncUrl(opp.mapped_page, 55)}</p>}
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <p style={{ fontSize: '0.9rem', fontWeight: 800, color: C.text, margin: 0 }}>{fmtNum(opp.impressions)}</p>
+              <p style={{ fontSize: '0.67rem', color: C.muted, margin: '0.1rem 0 0' }}>impressions</p>
+            </div>
+          </div>
+          <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '0.4rem', padding: '0.45rem 0.75rem', marginBottom: '0.4rem' }}>
+            <span style={{ fontSize: '0.67rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.muted }}>Content format · </span>
+            <span style={{ fontSize: '0.78rem', color: C.text }}>{opp.content_format}</span>
+          </div>
+          <p style={{ fontSize: '0.78rem', color: C.muted, margin: '0 0 0.3rem' }}>{opp.action}</p>
+          <p style={{ fontSize: '0.67rem', color: C.faint, margin: 0 }}>Schema: {opp.schema_recommendation}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ─── File drop zone ───────────────────────────────────────────────────────────
 
 function DropZone({ label, sub, file, onFile, accept = '.csv' }: { label: string; sub: string; file: File | null; onFile: (f: File) => void; accept?: string }) {
@@ -729,6 +974,8 @@ export default function QueryIntelligenceClient({ siteId, domain, initialRuns, i
   const [dateFrom, setDateFrom] = useState(daysAgo(28))
   const [dateTo, setDateTo] = useState(today())
   const [activePreset, setActivePreset] = useState('Last 28 days')
+  const [datesAutoDetected, setDatesAutoDetected] = useState(false)
+  const [showDatePicker, setShowDatePicker] = useState(false)
 
   // Run state
   const [uploading, setUploading] = useState(false)
@@ -747,6 +994,33 @@ export default function QueryIntelligenceClient({ siteId, domain, initialRuns, i
     setActivePreset(preset.label)
     setDateFrom(preset.dateFrom())
     setDateTo(preset.dateTo())
+    setDatesAutoDetected(false)
+  }
+
+  const handleQueriesFile = (f: File) => {
+    setQueriesFile(f)
+    const detected = detectDatesFromFilename(f.name)
+    if (detected) {
+      setDateFrom(detected.from)
+      setDateTo(detected.to)
+      setDatesAutoDetected(true)
+      setActivePreset('')
+      setShowDatePicker(false)
+    }
+  }
+
+  const handlePagesFile = (f: File) => {
+    setPagesFile(f)
+    if (!datesAutoDetected) {
+      const detected = detectDatesFromFilename(f.name)
+      if (detected) {
+        setDateFrom(detected.from)
+        setDateTo(detected.to)
+        setDatesAutoDetected(true)
+        setActivePreset('')
+        setShowDatePicker(false)
+      }
+    }
   }
 
   const handleAnalyse = async () => {
@@ -814,16 +1088,19 @@ export default function QueryIntelligenceClient({ siteId, domain, initialRuns, i
   }
 
   const tabs: TabDef[] = [
-    { id: 'overview',    label: 'Overview',          color: C.accent,  count: undefined },
-    { id: 'quick_wins',  label: 'Quick Wins',        color: C.accent,  count: analysis?.quick_wins.length },
-    { id: 'ctr',         label: 'CTR Optimizer',     color: C.amber,   count: analysis?.ctr_opportunities.length },
-    { id: 'gaps',        label: 'Content Gaps',      color: C.purple,  count: analysis?.content_gaps.length },
-    { id: 'snippets',    label: 'Featured Snippets', color: '#818CF8', count: analysis?.featured_snippets.length },
-    { id: 'longtail',    label: 'Long-tail',         color: C.orange,  count: analysis?.long_tail.length },
-    { id: 'performers',  label: 'Top Performers',    color: C.green,   count: analysis?.top_performers.length },
-    { id: 'clusters',    label: 'Topic Clusters',    color: C.purple,  count: analysis?.topic_clusters.length },
-    { id: 'comparison',  label: 'Comparison',        color: C.amber,   count: analysis?.comparison?.summary.total_improved, hidden: !analysis?.meta.has_comparison },
-    { id: 'pages',       label: 'Pages',             color: C.muted,   count: analysis?.pages?.length, hidden: !analysis?.meta.has_pages },
+    { id: 'overview',        label: 'Overview',          color: C.accent,   count: undefined },
+    { id: 'quick_wins',      label: 'Quick Wins',        color: C.accent,   count: analysis?.quick_wins.length },
+    { id: 'keyword_groups',  label: 'Keyword Groups',    color: C.purple,   count: analysis?.keyword_groups?.length,              hidden: !analysis?.keyword_groups },
+    { id: 'ai_opps',         label: 'AI Opportunities',  color: '#EC4899',  count: analysis?.ai_opportunities?.length,            hidden: !analysis?.ai_opportunities },
+    { id: 'content_map',     label: 'Content Map',       color: C.accent,   count: analysis?.content_map?.mapped_pages.length,    hidden: !analysis?.content_map },
+    { id: 'ctr',             label: 'CTR Optimizer',     color: C.amber,    count: analysis?.ctr_opportunities.length },
+    { id: 'gaps',            label: 'Content Gaps',      color: C.purple,   count: analysis?.content_gaps.length },
+    { id: 'snippets',        label: 'Featured Snippets', color: '#818CF8',  count: analysis?.featured_snippets.length },
+    { id: 'longtail',        label: 'Long-tail',         color: C.orange,   count: analysis?.long_tail.length },
+    { id: 'performers',      label: 'Top Performers',    color: C.green,    count: analysis?.top_performers.length },
+    { id: 'clusters',        label: 'Topic Clusters',    color: C.purple,   count: analysis?.topic_clusters.length },
+    { id: 'comparison',      label: 'Comparison',        color: C.amber,    count: analysis?.comparison?.summary.total_improved,  hidden: !analysis?.meta.has_comparison },
+    { id: 'pages',           label: 'Pages',             color: C.muted,    count: analysis?.pages?.length,                       hidden: !analysis?.meta.has_pages },
   ]
 
   const currentRun = runs.find(r => r.id === currentRunId)
@@ -869,22 +1146,39 @@ export default function QueryIntelligenceClient({ siteId, domain, initialRuns, i
 
             {/* Date range */}
             <div>
-              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: C.muted, margin: '0 0 0.625rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Date Range of your export</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem' }}>
-                {DATE_PRESETS.map(p => (
-                  <button key={p.label} onClick={() => applyPreset(p)} style={{ padding: '0.35rem 0.75rem', borderRadius: '0.4rem', fontSize: '0.78rem', fontWeight: 600, color: activePreset === p.label ? C.bg : C.muted, backgroundColor: activePreset === p.label ? C.accent : 'rgba(255,255,255,0.05)', border: `1px solid ${activePreset === p.label ? C.accent : C.border}`, cursor: 'pointer' }}>
-                    {p.label}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.625rem' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: C.muted, margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Date Range</p>
+                {datesAutoDetected && (
+                  <button onClick={() => setShowDatePicker(v => !v)} style={{ fontSize: '0.72rem', color: C.accent, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    {showDatePicker ? 'Hide picker' : 'Edit dates'}
                   </button>
-                ))}
+                )}
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                {[{ label: 'From', val: dateFrom, set: setDateFrom }, { label: 'To', val: dateTo, set: setDateTo }].map(f => (
-                  <div key={f.label}>
-                    <label style={{ display: 'block', fontSize: '0.72rem', color: C.muted, marginBottom: '0.25rem' }}>{f.label}</label>
-                    <input type="date" value={f.val} onChange={e => { f.set(e.target.value); setActivePreset('') }} style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: '0.4rem', padding: '0.4rem 0.625rem', fontSize: '0.8125rem', color: C.text, outline: 'none', colorScheme: 'dark' }} />
+              {datesAutoDetected && !showDatePicker ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '0.625rem 0.875rem', borderRadius: '0.5rem', backgroundColor: C.accentFaint, border: `1px solid ${C.borderAccent}` }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2.5" aria-hidden><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: C.accent }}>{fmtDate(dateFrom)} – {fmtDate(dateTo)}</span>
+                  <span style={{ fontSize: '0.72rem', color: C.muted }}>auto-detected from filename</span>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                    {DATE_PRESETS.map(p => (
+                      <button key={p.label} onClick={() => applyPreset(p)} style={{ padding: '0.35rem 0.75rem', borderRadius: '0.4rem', fontSize: '0.78rem', fontWeight: 600, color: activePreset === p.label ? C.bg : C.muted, backgroundColor: activePreset === p.label ? C.accent : 'rgba(255,255,255,0.05)', border: `1px solid ${activePreset === p.label ? C.accent : C.border}`, cursor: 'pointer' }}>
+                        {p.label}
+                      </button>
+                    ))}
                   </div>
-                ))}
-              </div>
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    {[{ label: 'From', val: dateFrom, set: setDateFrom }, { label: 'To', val: dateTo, set: setDateTo }].map(f => (
+                      <div key={f.label}>
+                        <label style={{ display: 'block', fontSize: '0.72rem', color: C.muted, marginBottom: '0.25rem' }}>{f.label}</label>
+                        <input type="date" value={f.val} onChange={e => { f.set(e.target.value); setActivePreset(''); setDatesAutoDetected(false) }} style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, borderRadius: '0.4rem', padding: '0.4rem 0.625rem', fontSize: '0.8125rem', color: C.text, outline: 'none', colorScheme: 'dark' }} />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* File uploads */}
@@ -892,12 +1186,12 @@ export default function QueryIntelligenceClient({ siteId, domain, initialRuns, i
               <div>
                 <p style={{ fontSize: '0.72rem', fontWeight: 600, color: C.text, margin: '0 0 0.4rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Queries CSV <span style={{ color: C.red }}>*</span></p>
                 <p style={{ fontSize: '0.75rem', color: C.muted, margin: '0 0 0.625rem' }}>GSC → Performance → Queries tab → Export. Comparison exports (dual columns) are auto-detected.</p>
-                <DropZone label="Drop Queries CSV here" sub="or click to browse" file={queriesFile} onFile={setQueriesFile} />
+                <DropZone label="Drop Queries CSV here" sub="or click to browse" file={queriesFile} onFile={handleQueriesFile} />
               </div>
               <div>
                 <p style={{ fontSize: '0.72rem', fontWeight: 600, color: C.text, margin: '0 0 0.4rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Pages CSV <span style={{ color: C.muted }}>(optional)</span></p>
                 <p style={{ fontSize: '0.75rem', color: C.muted, margin: '0 0 0.625rem' }}>GSC → Performance → Pages tab → Export. Used to map queries to landing pages.</p>
-                <DropZone label="Drop Pages CSV here" sub="or click to browse" file={pagesFile} onFile={setPagesFile} />
+                <DropZone label="Drop Pages CSV here" sub="or click to browse" file={pagesFile} onFile={handlePagesFile} />
               </div>
             </div>
 
@@ -935,16 +1229,19 @@ export default function QueryIntelligenceClient({ siteId, domain, initialRuns, i
           <Card>
             <TabBar tabs={tabs} active={activeTab} onChange={setActiveTab} />
             <div>
-              {activeTab === 'overview'   && <OverviewPanel   analysis={analysis} />}
-              {activeTab === 'quick_wins' && <QuickWinsPanel  items={analysis.quick_wins} />}
-              {activeTab === 'ctr'        && <CTRPanel        items={analysis.ctr_opportunities} />}
-              {activeTab === 'gaps'       && <ContentGapsPanel items={analysis.content_gaps} />}
-              {activeTab === 'snippets'   && <SnippetsPanel   items={analysis.featured_snippets} />}
-              {activeTab === 'longtail'   && <LongTailPanel   items={analysis.long_tail} />}
-              {activeTab === 'performers' && <PerformersPanel items={analysis.top_performers} />}
-              {activeTab === 'clusters'   && <ClustersPanel   items={analysis.topic_clusters} />}
-              {activeTab === 'comparison' && analysis.comparison && <ComparisonPanel data={analysis.comparison} />}
-              {activeTab === 'pages'      && analysis.pages && <PagesPanel items={analysis.pages} />}
+              {activeTab === 'overview'       && <OverviewPanel      analysis={analysis} />}
+              {activeTab === 'quick_wins'     && <QuickWinsPanel     items={analysis.quick_wins} />}
+              {activeTab === 'keyword_groups' && analysis.keyword_groups   && <KeywordGroupsPanel items={analysis.keyword_groups} />}
+              {activeTab === 'ai_opps'        && analysis.ai_opportunities && <AiOppsPanel        items={analysis.ai_opportunities} />}
+              {activeTab === 'content_map'    && analysis.content_map      && <ContentMapPanel    data={analysis.content_map} />}
+              {activeTab === 'ctr'            && <CTRPanel           items={analysis.ctr_opportunities} />}
+              {activeTab === 'gaps'           && <ContentGapsPanel   items={analysis.content_gaps} />}
+              {activeTab === 'snippets'       && <SnippetsPanel      items={analysis.featured_snippets} />}
+              {activeTab === 'longtail'       && <LongTailPanel      items={analysis.long_tail} />}
+              {activeTab === 'performers'     && <PerformersPanel    items={analysis.top_performers} />}
+              {activeTab === 'clusters'       && <ClustersPanel      items={analysis.topic_clusters} />}
+              {activeTab === 'comparison'     && analysis.comparison        && <ComparisonPanel   data={analysis.comparison} />}
+              {activeTab === 'pages'          && analysis.pages             && <PagesPanel        items={analysis.pages} />}
             </div>
           </Card>
         </>

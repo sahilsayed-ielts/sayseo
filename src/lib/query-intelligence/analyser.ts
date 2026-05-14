@@ -127,6 +127,72 @@ export interface TopicCluster {
   top_queries: string[]
 }
 
+// ─── New extended types ───────────────────────────────────────────────────────
+
+export type Intent = 'informational' | 'commercial' | 'transactional' | 'navigational'
+
+export interface KeywordGroupQuery {
+  query: string
+  impressions: number
+  clicks: number
+  position: number
+  ctr: number
+  intent: Intent
+}
+
+export interface KeywordGroup {
+  parent_topic: string
+  intent: Intent | 'mixed'
+  query_count: number
+  total_impressions: number
+  total_clicks: number
+  avg_position: number
+  avg_ctr: number
+  queries: KeywordGroupQuery[]
+  recommended_action: string
+}
+
+export interface ContentMapEntry {
+  page: string
+  page_impressions: number
+  page_clicks: number
+  page_ctr: number
+  page_position: number
+  mapped_queries: KeywordGroupQuery[]
+  total_query_impressions: number
+  total_query_clicks: number
+}
+
+export interface SuggestedPage {
+  suggested_title: string
+  suggested_slug: string
+  target_queries: string[]
+  total_impressions: number
+  priority: 'high' | 'medium'
+  intent: Intent
+  reason: string
+}
+
+export interface ContentMapAnalysis {
+  mapped_pages: ContentMapEntry[]
+  orphan_queries: KeywordGroupQuery[]
+  suggested_pages: SuggestedPage[]
+  coverage_pct: number
+}
+
+export interface AiOpportunity {
+  query: string
+  impressions: number
+  clicks: number
+  position: number
+  ai_type: 'ai_overview' | 'how_to' | 'comparison' | 'definition' | 'list' | 'faq'
+  score: 'high' | 'medium'
+  content_format: string
+  schema_recommendation: string
+  action: string
+  mapped_page?: string
+}
+
 export interface BrandedSplit {
   brand: string | null
   branded: { queries: number; clicks: number; impressions: number; avg_ctr: number; avg_position: number }
@@ -170,10 +236,14 @@ export interface QIAnalysis {
   featured_snippets: FeaturedSnippetOpp[]
   long_tail: LongTailOpp[]
   top_performers: TopPerformer[]
-  topic_clusters: TopicCluster[]
+  topic_clusters: TopicCluster[]   // kept for backward compat with stored data
   branded_split: BrandedSplit
-  pages?: PageAnalysis[]
+  pages?: PageAnalysis[]           // kept for backward compat
   comparison?: ComparisonAnalysis
+  // New extended fields (present on analyses run after the v2 upgrade)
+  keyword_groups?: KeywordGroup[]
+  content_map?: ContentMapAnalysis
+  ai_opportunities?: AiOpportunity[]
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -458,17 +528,24 @@ export function analyse(input: AnalyseInput): QIAnalysis {
   // ── Topic clusters ──────────────────────────────────────────────────────────
 
   const topic_clusters = buildTopicClusters(queries)
+  const keyword_groups = buildKeywordGroups(queries)
 
   // ── Branded split ───────────────────────────────────────────────────────────
 
   const branded_split = buildBrandedSplit(queries, brand)
 
-  // ── Pages analysis ──────────────────────────────────────────────────────────
+  // ── Pages analysis (legacy) + new content map ───────────────────────────────
 
   let pagesAnalysis: PageAnalysis[] | undefined
+  let content_map: ContentMapAnalysis | undefined
   if (pages.length > 0) {
     pagesAnalysis = buildPagesAnalysis(queries, pages, avgCtr)
+    content_map = buildContentMap(queries, pages)
   }
+
+  // ── AI opportunities ─────────────────────────────────────────────────────────
+
+  const ai_opportunities = buildAiOpportunities(queries, pages, sortedImpressions)
 
   // ── Comparison ──────────────────────────────────────────────────────────────
 
@@ -499,6 +576,9 @@ export function analyse(input: AnalyseInput): QIAnalysis {
     branded_split,
     pages: pagesAnalysis,
     comparison,
+    keyword_groups,
+    content_map,
+    ai_opportunities,
   }
 }
 
@@ -727,5 +807,302 @@ function emptyAnalysis(hasComparison: boolean, hasPages: boolean): QIAnalysis {
     top_performers: [],
     topic_clusters: [],
     branded_split: { brand: null, branded: { queries: 0, clicks: 0, impressions: 0, avg_ctr: 0, avg_position: 0 }, non_branded: { queries: 0, clicks: 0, impressions: 0, avg_ctr: 0, avg_position: 0 } },
+    keyword_groups: [],
+    ai_opportunities: [],
   }
+}
+
+// ─── New sub-builders ─────────────────────────────────────────────────────────
+
+function getMostCommon<T>(arr: T[]): T | null {
+  if (!arr.length) return null
+  const freq = new Map<T, number>()
+  for (const item of arr) freq.set(item, (freq.get(item) ?? 0) + 1)
+  return Array.from(freq.entries()).sort((a, b) => b[1] - a[1])[0][0]
+}
+
+function titleCase(s: string): string {
+  return s.replace(/\b\w/g, c => c.toUpperCase())
+}
+
+function groupRecommendation(intent: Intent | 'mixed', topic: string, avgPos: number): string {
+  if (intent === 'informational') {
+    return avgPos > 20
+      ? `Create a comprehensive guide targeting "${topic}" to capture informational traffic.`
+      : `Expand existing "${topic}" content with FAQs, examples and related questions to reinforce rankings.`
+  }
+  if (intent === 'commercial') {
+    return avgPos > 20
+      ? `Build a comparison or review page targeting "${topic}" queries.`
+      : `Improve title tags and meta descriptions to win more commercial clicks for "${topic}".`
+  }
+  if (intent === 'transactional') {
+    return `Ensure service/pricing pages for "${topic}" are clearly indexed and easy to navigate.`
+  }
+  if (intent === 'navigational') {
+    return `Strengthen brand signals and sitelinks for "${topic}" related navigational queries.`
+  }
+  return `Consolidate "${topic}" content into a well-structured pillar page covering all intents.`
+}
+
+function buildKeywordGroups(queries: QueryRow[], max = 20): KeywordGroup[] {
+  // Extract significant words and bigrams per query
+  const queryMeta = queries.map(q => {
+    const words = significantWords(q.query)
+    const bigrams: string[] = []
+    for (let i = 0; i < words.length - 1; i++) bigrams.push(`${words[i]} ${words[i + 1]}`)
+    return { q, words, bigrams }
+  })
+
+  // Score phrases (bigrams preferred, then unigrams) by impression weight
+  const phraseScore = new Map<string, number>()
+  for (const { q, words, bigrams } of queryMeta) {
+    for (const phrase of [...bigrams, ...words]) {
+      phraseScore.set(phrase, (phraseScore.get(phrase) ?? 0) + q.impressions)
+    }
+  }
+
+  // Top phrases that appear in ≥2 queries
+  const phraseCounts = new Map<string, number>()
+  for (const { words, bigrams } of queryMeta) {
+    for (const phrase of [...new Set([...bigrams, ...words])]) {
+      phraseCounts.set(phrase, (phraseCounts.get(phrase) ?? 0) + 1)
+    }
+  }
+
+  const topPhrases = Array.from(phraseScore.entries())
+    .filter(([p]) => (phraseCounts.get(p) ?? 0) >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .map(([p]) => p)
+    .slice(0, max * 3)
+
+  // Assign each query to its highest-scoring phrase (greedy)
+  const groups = new Map<string, QueryRow[]>()
+  const assigned = new Set<string>()
+
+  for (const phrase of topPhrases) {
+    for (const { q, words, bigrams } of queryMeta) {
+      if (assigned.has(q.query)) continue
+      const inQuery = bigrams.includes(phrase) || words.includes(phrase)
+      if (!inQuery) continue
+      const g = groups.get(phrase) ?? []
+      g.push(q)
+      groups.set(phrase, g)
+      assigned.add(q.query)
+    }
+  }
+
+  return Array.from(groups.entries())
+    .filter(([, qs]) => qs.length >= 2)
+    .sort((a, b) => {
+      const ia = a[1].reduce((s, q) => s + q.impressions, 0)
+      const ib = b[1].reduce((s, q) => s + q.impressions, 0)
+      return ib - ia
+    })
+    .slice(0, max)
+    .map(([phrase, qs]) => {
+      const totalImp = qs.reduce((s, q) => s + q.impressions, 0)
+      const totalClicks = qs.reduce((s, q) => s + q.clicks, 0)
+      const queryItems: KeywordGroupQuery[] = qs
+        .sort((a, b) => b.impressions - a.impressions)
+        .map(q => ({ query: q.query, impressions: q.impressions, clicks: q.clicks, position: q.position, ctr: q.ctr, intent: detectIntent(q.query) }))
+
+      const intents = queryItems.map(q => q.intent)
+      const intentCounts = { informational: 0, commercial: 0, transactional: 0, navigational: 0 }
+      for (const i of intents) intentCounts[i]++
+      const maxCount = Math.max(...Object.values(intentCounts))
+      const dominantIntents = (Object.entries(intentCounts) as [Intent, number][]).filter(([, c]) => c === maxCount)
+      const dominant: Intent | 'mixed' = dominantIntents.length > 1 ? 'mixed' : dominantIntents[0][0]
+
+      const avgPos = totalImp > 0
+        ? qs.reduce((s, q) => s + q.position * q.impressions, 0) / totalImp
+        : avg(qs.map(q => q.position))
+
+      return {
+        parent_topic: phrase,
+        intent: dominant,
+        query_count: qs.length,
+        total_impressions: totalImp,
+        total_clicks: totalClicks,
+        avg_position: avgPos,
+        avg_ctr: totalImp > 0 ? totalClicks / totalImp : 0,
+        queries: queryItems,
+        recommended_action: groupRecommendation(dominant, phrase, avgPos),
+      }
+    })
+}
+
+function matchQueryToPage(q: QueryRow, pages: PageRow[]): PageRow | null {
+  const qWords = significantWords(q.query)
+  if (!qWords.length) return null
+  let best: { page: PageRow; score: number } | null = null
+  for (const p of pages) {
+    const tokens = new Set(slugTokens(p.page))
+    const overlap = qWords.filter(w => tokens.has(w)).length
+    const score = overlap / qWords.length
+    if (score >= 0.28 && (!best || score > best.score)) {
+      best = { page: p, score }
+    }
+  }
+  return best?.page ?? null
+}
+
+function buildContentMap(queries: QueryRow[], pages: PageRow[]): ContentMapAnalysis {
+  const pageQueryBuckets = new Map<string, QueryRow[]>()
+  const orphanQueries: QueryRow[] = []
+
+  for (const q of queries) {
+    const matched = matchQueryToPage(q, pages)
+    if (matched) {
+      const list = pageQueryBuckets.get(matched.page) ?? []
+      list.push(q)
+      pageQueryBuckets.set(matched.page, list)
+    } else {
+      orphanQueries.push(q)
+    }
+  }
+
+  const mapped_pages: ContentMapEntry[] = pages
+    .filter(p => pageQueryBuckets.has(p.page))
+    .map(p => {
+      const qs = pageQueryBuckets.get(p.page)!
+      const qItems: KeywordGroupQuery[] = qs
+        .sort((a, b) => b.impressions - a.impressions)
+        .map(q => ({ query: q.query, impressions: q.impressions, clicks: q.clicks, position: q.position, ctr: q.ctr, intent: detectIntent(q.query) }))
+      return {
+        page: p.page,
+        page_impressions: p.impressions,
+        page_clicks: p.clicks,
+        page_ctr: p.ctr,
+        page_position: p.position,
+        mapped_queries: qItems,
+        total_query_impressions: qs.reduce((s, q) => s + q.impressions, 0),
+        total_query_clicks: qs.reduce((s, q) => s + q.clicks, 0),
+      }
+    })
+    .sort((a, b) => b.total_query_impressions - a.total_query_impressions)
+
+  const sortedOrphans = orphanQueries
+    .sort((a, b) => b.impressions - a.impressions)
+    .slice(0, 60)
+    .map(q => ({ query: q.query, impressions: q.impressions, clicks: q.clicks, position: q.position, ctr: q.ctr, intent: detectIntent(q.query) }))
+
+  const totalImpressions = queries.reduce((s, q) => s + q.impressions, 0)
+  const mappedImpressions = queries
+    .filter(q => matchQueryToPage(q, pages))
+    .reduce((s, q) => s + q.impressions, 0)
+
+  return {
+    mapped_pages,
+    orphan_queries: sortedOrphans,
+    suggested_pages: buildPageRecommendations(orphanQueries),
+    coverage_pct: totalImpressions > 0 ? (mappedImpressions / totalImpressions) * 100 : 0,
+  }
+}
+
+function buildPageRecommendations(orphans: QueryRow[], max = 15): SuggestedPage[] {
+  if (!orphans.length) return []
+
+  const queryMeta = orphans.map(q => ({ q, words: significantWords(q.query) }))
+
+  const wordScore = new Map<string, number>()
+  for (const { q, words } of queryMeta) {
+    for (const w of words) wordScore.set(w, (wordScore.get(w) ?? 0) + q.impressions)
+  }
+
+  const topWords = Array.from(wordScore.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([w]) => w)
+    .slice(0, max * 2)
+
+  const groups = new Map<string, QueryRow[]>()
+  const assigned = new Set<string>()
+
+  for (const word of topWords) {
+    for (const { q, words } of queryMeta) {
+      if (assigned.has(q.query)) continue
+      if (words.includes(word)) {
+        const g = groups.get(word) ?? []
+        g.push(q)
+        groups.set(word, g)
+        assigned.add(q.query)
+      }
+    }
+  }
+
+  return Array.from(groups.entries())
+    .sort((a, b) => {
+      const ia = a[1].reduce((s, q) => s + q.impressions, 0)
+      const ib = b[1].reduce((s, q) => s + q.impressions, 0)
+      return ib - ia
+    })
+    .slice(0, max)
+    .map(([keyword, qs]) => {
+      const totalImp = qs.reduce((s, q) => s + q.impressions, 0)
+      const intents = qs.map(q => detectIntent(q.query))
+      const dominantIntent: Intent = getMostCommon(intents) ?? 'informational'
+      const slug = keyword.replace(/\s+/g, '-').toLowerCase()
+      const titlePrefix = dominantIntent === 'informational' ? 'Complete Guide to' : dominantIntent === 'commercial' ? 'Best' : ''
+      return {
+        suggested_title: titleCase(`${titlePrefix} ${keyword}`.trim()),
+        suggested_slug: `/${slug}/`,
+        target_queries: qs.slice(0, 10).map(q => q.query),
+        total_impressions: totalImp,
+        priority: totalImp >= 30 ? 'high' as const : 'medium' as const,
+        intent: dominantIntent,
+        reason: `${qs.length} quer${qs.length === 1 ? 'y' : 'ies'} targeting "${keyword}" (${totalImp.toLocaleString()} impressions) have no dedicated page.`,
+      }
+    })
+}
+
+function buildAiOpportunities(queries: QueryRow[], pages: PageRow[], sortedImpressions: number[]): AiOpportunity[] {
+  const p25 = percentile(sortedImpressions, 0.25)
+  const opps: AiOpportunity[] = []
+
+  for (const q of queries) {
+    if (q.impressions < p25 || q.position > 40) continue
+
+    const words = q.query.toLowerCase().split(/\s+/)
+    const first = words[0]
+    const lc = q.query.toLowerCase()
+
+    const mappedPage = pages.length > 0 ? matchQueryToPage(q, pages)?.page : undefined
+    const highScore = q.impressions >= percentile(sortedImpressions, 0.5) && q.position <= 20
+
+    // How-to / step content
+    if (first === 'how') {
+      opps.push({ query: q.query, impressions: q.impressions, clicks: q.clicks, position: q.position, ai_type: 'how_to', score: highScore ? 'high' : 'medium', content_format: 'Numbered step-by-step guide', schema_recommendation: 'HowTo schema', action: 'Break content into clearly numbered steps with an H2 per step. Add HowTo schema. AI tools frequently cite step-format content verbatim.', mapped_page: mappedPage })
+      continue
+    }
+
+    // Other question forms → AI Overview / FAQ
+    if (QUESTION_STARTERS.has(first)) {
+      opps.push({ query: q.query, impressions: q.impressions, clicks: q.clicks, position: q.position, ai_type: 'ai_overview', score: highScore ? 'high' : 'medium', content_format: 'Direct-answer paragraph (40–60 words) + FAQ section', schema_recommendation: 'FAQPage schema', action: 'Add a concise bolded answer in the first paragraph. Create a FAQ section with 5+ related questions. Add FAQPage schema to the page.', mapped_page: mappedPage })
+      continue
+    }
+
+    // Comparison
+    if (lc.includes(' vs ') || lc.includes(' versus ') || words.includes('compare') || words.includes('difference')) {
+      opps.push({ query: q.query, impressions: q.impressions, clicks: q.clicks, position: q.position, ai_type: 'comparison', score: highScore ? 'high' : 'medium', content_format: 'Side-by-side comparison table with clear verdict', schema_recommendation: 'Table markup + FAQPage for follow-up questions', action: 'Create a structured comparison table. Add a "Bottom Line" verdict section. AI tools pull structured comparison data into summaries.', mapped_page: mappedPage })
+      continue
+    }
+
+    // Definition / meaning
+    if (words.some(w => ['meaning', 'definition', 'define', 'explained', 'means', 'example', 'examples'].includes(w))) {
+      opps.push({ query: q.query, impressions: q.impressions, clicks: q.clicks, position: q.position, ai_type: 'definition', score: highScore ? 'high' : 'medium', content_format: 'One-sentence definition → 2–3 sentence expansion', schema_recommendation: 'FAQPage or DefinedTerm schema', action: 'Add a bolded definition at the very top of the page. AI models prioritise definitional content and cite it directly.', mapped_page: mappedPage })
+      continue
+    }
+
+    // List / best / top
+    if (words.some(w => ['best', 'top', 'list', 'types', 'alternatives', 'tools', 'ways', 'tips'].includes(w))) {
+      opps.push({ query: q.query, impressions: q.impressions, clicks: q.clicks, position: q.position, ai_type: 'list', score: highScore ? 'high' : 'medium', content_format: 'Numbered or bulleted list with H3 per item', schema_recommendation: 'ItemList schema', action: 'Structure as a numbered list with a summary sentence for each item. Add ItemList schema. AI summarisers frequently extract list-format content.', mapped_page: mappedPage })
+    }
+  }
+
+  return opps
+    .sort((a, b) => {
+      if (a.score !== b.score) return a.score === 'high' ? -1 : 1
+      return b.impressions - a.impressions
+    })
+    .slice(0, 35)
 }
