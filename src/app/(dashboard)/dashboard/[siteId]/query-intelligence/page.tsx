@@ -13,7 +13,7 @@ export default async function QueryIntelligencePage({
 
   const { data: site } = await supabase
     .from('connected_sites')
-    .select('id, domain, gsc_site_url, access_token')
+    .select('id, domain')
     .eq('id', siteId)
     .single()
 
@@ -21,24 +21,14 @@ export default async function QueryIntelligencePage({
 
   const admin = createAdminClient()
 
-  const [runsResult, oauthResult] = await Promise.all([
-    admin
-      .from('query_intelligence_runs')
-      .select('id, fetched_at, row_count, status')
-      .eq('site_id', siteId)
-      .order('fetched_at', { ascending: false })
-      .limit(20),
-    admin
-      .from('oauth_tokens')
-      .select('id')
-      .eq('site_id', siteId)
-      .in('provider', ['gsc', 'ga4'])
-      .limit(1)
-      .maybeSingle(),
-  ])
+  const { data: runsData } = await admin
+    .from('query_intelligence_runs')
+    .select('id, fetched_at, row_count, status, date_from, date_to, source')
+    .eq('site_id', siteId)
+    .order('fetched_at', { ascending: false })
+    .limit(20)
 
-  const runs: QIRun[] = (runsResult.data ?? []) as QIRun[]
-  const hasGscToken = !!(oauthResult.data) || !!(site.access_token)
+  const runs: QIRun[] = (runsData ?? []) as QIRun[]
 
   // Load analysis for the most recent complete run, if one exists
   const latestCompleteRun = runs.find((r) => r.status === 'complete')
@@ -62,7 +52,6 @@ export default async function QueryIntelligencePage({
     <QueryIntelligenceClient
       siteId={siteId}
       domain={site.domain}
-      hasGscToken={hasGscToken}
       initialRuns={runs}
       initialAnalysis={initialAnalysis}
       initialRunId={initialRunId}
