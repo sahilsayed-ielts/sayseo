@@ -393,16 +393,27 @@ function OverviewPanel({ analysis }: { analysis: QIAnalysis }) {
   )
 }
 
+function DeltaBadge({ v, invert = false }: { v: number; invert?: boolean }) {
+  if (v === 0) return <span style={{ color: C.muted, fontSize: '0.75rem' }}>—</span>
+  const good = invert ? v < 0 : v > 0
+  const color = good ? C.green : C.red
+  const arrow = good ? '▲' : '▼'
+  return <span style={{ color, fontSize: '0.78rem', fontWeight: 700 }}>{arrow} {v > 0 ? '+' : ''}{v}</span>
+}
+
 function QuickWinsPanel({ items }: { items: QuickWin[] }) {
   if (!items.length) return <EmptyState msg="No quick win opportunities found in this data." />
+  const hasCmp = items.some(i => i.pos_change !== undefined)
   return (
-    <DataTable headers={['Query', 'Position', 'Impressions', 'Clicks', 'CTR', 'Opportunity', 'Potential Lift']}>
+    <DataTable headers={['Query', 'Position', ...(hasCmp ? ['Pos Δ'] : []), 'Impressions', 'Clicks', ...(hasCmp ? ['Click Δ'] : []), 'CTR', 'Opportunity', 'Potential Lift']}>
       {items.map((r, i) => (
         <TR key={i} highlight={r.opportunity === 'top3_push'} last={i === items.length - 1}>
-          <td style={{ ...TD, maxWidth: 240, fontWeight: 500 }}>{r.query}</td>
+          <td style={{ ...TD, maxWidth: 220, fontWeight: 500 }}>{r.query}</td>
           <td style={{ ...TD, color: C.accent, fontWeight: 700 }}>{Number(r.position).toFixed(1)}</td>
+          {hasCmp && <td style={TD}>{r.pos_change !== undefined ? <DeltaBadge v={r.pos_change} /> : '—'}</td>}
           <td style={TD}>{fmtNum(r.impressions)}</td>
           <td style={TD}>{fmtNum(r.clicks)}</td>
+          {hasCmp && <td style={TD}>{r.click_change !== undefined ? <DeltaBadge v={r.click_change} /> : '—'}</td>}
           <td style={{ ...TD, color: C.muted }}>{fmtPct(r.ctr)}</td>
           <td style={TD}><Badge label={r.opportunity === 'top3_push' ? 'Top 3 push' : 'Page 1 push'} color={r.opportunity === 'top3_push' ? C.accent : C.amber} /></td>
           <td style={{ ...TD, color: C.accent, fontWeight: 600 }}>{r.lift_estimate}</td>
@@ -414,14 +425,25 @@ function QuickWinsPanel({ items }: { items: QuickWin[] }) {
 
 function CTRPanel({ items }: { items: CTROpportunity[] }) {
   if (!items.length) return <EmptyState msg="No CTR gaps found. Your titles and descriptions are performing well." />
+  const hasCmp = items.some(i => i.ctr_change !== undefined)
   return (
-    <DataTable headers={['Query', 'Position', 'Impressions', 'Actual CTR', 'Expected CTR', 'Gap', 'Missed Clicks', 'Priority']}>
+    <DataTable headers={['Query', 'Position', ...(hasCmp ? ['Pos Δ'] : []), 'Impressions', 'Actual CTR', ...(hasCmp ? ['CTR Δ'] : []), 'Expected CTR', 'Gap', 'Missed Clicks', 'Priority']}>
       {items.map((r, i) => (
         <TR key={i} highlight={r.priority === 'high'} last={i === items.length - 1}>
-          <td style={{ ...TD, maxWidth: 240, fontWeight: 500 }}>{r.query}</td>
+          <td style={{ ...TD, maxWidth: 220, fontWeight: 500 }}>{r.query}</td>
           <td style={{ ...TD, fontWeight: 600 }}>{Number(r.position).toFixed(1)}</td>
+          {hasCmp && <td style={TD}>{r.pos_change !== undefined ? <DeltaBadge v={r.pos_change} /> : '—'}</td>}
           <td style={TD}>{fmtNum(r.impressions)}</td>
           <td style={{ ...TD, color: r.priority === 'high' ? C.red : C.amber }}>{fmtPct(r.actual_ctr)}</td>
+          {hasCmp && (
+            <td style={TD}>
+              {r.ctr_change !== undefined
+                ? <span style={{ color: r.ctr_change > 0 ? C.green : r.ctr_change < 0 ? C.red : C.muted, fontSize: '0.78rem', fontWeight: 700 }}>
+                    {r.ctr_change > 0 ? '▲ +' : r.ctr_change < 0 ? '▼ ' : '—'}{r.ctr_change !== 0 ? fmtPct(Math.abs(r.ctr_change)) : ''}
+                  </span>
+                : '—'}
+            </td>
+          )}
           <td style={{ ...TD, color: C.muted }}>{fmtPct(r.expected_ctr)}</td>
           <td style={{ ...TD, color: C.red, fontWeight: 700 }}>−{r.gap_pct}%</td>
           <td style={{ ...TD, color: C.amber }}>{fmtNum(r.missed_clicks)}/mo</td>
@@ -544,84 +566,156 @@ function ClustersPanel({ items }: { items: TopicCluster[] }) {
 }
 
 function ComparisonPanel({ data }: { data: NonNullable<QIAnalysis['comparison']> }) {
+  const [subView, setSubView] = useState<'movers' | 'drops' | 'new' | 'lost'>('movers')
   const { summary } = data
-  const signedNum = (n: number) => (n >= 0 ? '+' : '') + fmtNum(n)
-  const signedPct = (n: number) => (n >= 0 ? '+' : '') + n + '%'
-  const posColor = (n: number) => n > 0 ? C.green : n < 0 ? C.red : C.muted
+
+  const signedNum = (n: number) => (n > 0 ? '+' : '') + fmtNum(n)
+  const nc = (n: number) => n > 0 ? C.green : n < 0 ? C.red : C.muted
+  const borderFor = (color: string) =>
+    color === C.green ? 'rgba(0,212,170,0.22)' : color === C.red ? 'rgba(239,68,68,0.18)' : C.border
+
+  const moversRows = data.top_movers ?? data.improved_positions.map(r => ({
+    query: r.query, impressions: r.impressions, clicks: 0, position: r.to_pos,
+    prev_position: r.from_pos, prev_impressions: r.impressions,
+    pos_change: r.change, click_change: 0, impression_change_pct: 0,
+  }))
+  const dropsRows = data.biggest_drops ?? data.dropped_positions.map(r => ({
+    query: r.query, impressions: r.impressions, clicks: 0, position: r.to_pos,
+    prev_position: r.from_pos, prev_impressions: r.impressions,
+    pos_change: -r.change, click_change: 0, impression_change_pct: 0,
+  }))
 
   return (
     <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      <StatGrid items={[
-        { label: 'Click Change',      value: signedNum(summary.click_change),      sub: signedPct(summary.click_change_pct),      accent: summary.click_change >= 0 },
-        { label: 'Impression Change', value: signedNum(summary.impression_change), sub: signedPct(summary.impression_change_pct) },
-        { label: 'Avg Pos Change',    value: signedNum(summary.avg_position_change), sub: summary.avg_position_change > 0 ? 'improved' : 'declined' },
-        { label: 'Improved Queries',  value: fmtNum(summary.total_improved),       accent: true },
-        { label: 'Dropped Queries',   value: fmtNum(summary.total_dropped) },
-      ]} />
 
-      {data.improved_positions.length > 0 && (
-        <Card>
-          <SectionHeader title="Position Improvements" count={data.improved_positions.length} color={C.green} />
-          <DataTable headers={['Query', 'Previous', 'Current', 'Improvement', 'Impressions']}>
-            {data.improved_positions.map((r, i) => (
-              <TR key={i} highlight last={i === data.improved_positions.length - 1}>
-                <td style={{ ...TD, maxWidth: 260, fontWeight: 500 }}>{r.query}</td>
-                <td style={{ ...TD, color: C.muted }}>{Number(r.from_pos).toFixed(1)}</td>
-                <td style={{ ...TD, color: C.accent, fontWeight: 700 }}>{Number(r.to_pos).toFixed(1)}</td>
-                <td style={{ ...TD, color: C.green, fontWeight: 700 }}>+{r.change}</td>
-                <td style={TD}>{fmtNum(r.impressions)}</td>
-              </TR>
-            ))}
-          </DataTable>
-        </Card>
-      )}
+      {/* Hero delta stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '0.75rem' }}>
+        {[
+          { label: 'Clicks',       value: signedNum(summary.click_change),      sub: (summary.click_change_pct >= 0 ? '+' : '') + summary.click_change_pct + '%',     color: nc(summary.click_change) },
+          { label: 'Impressions',  value: signedNum(summary.impression_change), sub: (summary.impression_change_pct >= 0 ? '+' : '') + summary.impression_change_pct + '%', color: nc(summary.impression_change) },
+          { label: 'Avg Position', value: summary.avg_position_change > 0 ? `▲ ${summary.avg_position_change}` : summary.avg_position_change < 0 ? `▼ ${Math.abs(summary.avg_position_change)}` : '—', sub: summary.avg_position_change > 0 ? 'improved' : summary.avg_position_change < 0 ? 'declined' : 'unchanged', color: nc(summary.avg_position_change) },
+          ...(summary.avg_ctr_change !== undefined ? [{
+            label: 'Avg CTR', color: nc(summary.avg_ctr_change),
+            value: (summary.avg_ctr_change > 0 ? '+' : '') + fmtPct(Math.abs(summary.avg_ctr_change)),
+            sub: summary.avg_ctr_change > 0 ? 'improved' : summary.avg_ctr_change < 0 ? 'declined' : 'unchanged',
+          }] : []),
+        ].map(it => (
+          <div key={it.label} style={{ backgroundColor: C.card, border: `1px solid ${borderFor(it.color)}`, borderRadius: '0.75rem', padding: '1rem' }}>
+            <p style={{ fontSize: '0.67rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.muted, margin: '0 0 0.3rem' }}>{it.label}</p>
+            <p style={{ fontSize: '1.5rem', fontWeight: 800, color: it.color, margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>{it.value}</p>
+            <p style={{ fontSize: '0.72rem', color: `color-mix(in srgb, ${it.color} 65%, transparent)`, margin: '0.25rem 0 0' }}>{it.sub}</p>
+          </div>
+        ))}
+      </div>
 
-      {data.dropped_positions.length > 0 && (
-        <Card>
-          <SectionHeader title="Position Drops" count={data.dropped_positions.length} color={C.red} />
-          <DataTable headers={['Query', 'Previous', 'Current', 'Drop', 'Impressions']}>
-            {data.dropped_positions.map((r, i) => (
-              <TR key={i} last={i === data.dropped_positions.length - 1}>
-                <td style={{ ...TD, maxWidth: 260, fontWeight: 500 }}>{r.query}</td>
-                <td style={{ ...TD, color: C.muted }}>{Number(r.from_pos).toFixed(1)}</td>
-                <td style={{ ...TD, color: C.red, fontWeight: 700 }}>{Number(r.to_pos).toFixed(1)}</td>
-                <td style={{ ...TD, color: C.red, fontWeight: 700 }}>−{r.change}</td>
-                <td style={TD}>{fmtNum(r.impressions)}</td>
-              </TR>
-            ))}
-          </DataTable>
-        </Card>
-      )}
+      {/* Movement grid — clickable to switch sub-view */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 120px), 1fr))', gap: '0.5rem' }}>
+        {([
+          { label: '↑ Rising',       value: summary.total_improved,              color: C.green,  sub: 'pos. gained ≥3',    view: 'movers' as const },
+          { label: '↓ Dropping',     value: summary.total_dropped,               color: C.red,    sub: 'pos. lost ≥3',      view: 'drops'  as const },
+          { label: '✦ New',          value: summary.total_new ?? 0,              color: C.purple, sub: 'new this period',   view: 'new'    as const },
+          { label: '✕ Lost',         value: summary.total_lost ?? 0,             color: C.faint,  sub: 'disappeared',       view: 'lost'   as const },
+          ...(summary.queries_entered_top3  !== undefined ? [{ label: '▲ Into Top 3',   value: summary.queries_entered_top3,  color: C.accent, sub: 'newly top 3',        view: 'movers' as const }] : []),
+          ...(summary.queries_left_top3     !== undefined ? [{ label: '▼ Left Top 3',   value: summary.queries_left_top3,     color: C.orange, sub: 'fell from top 3',    view: 'drops'  as const }] : []),
+          ...(summary.queries_entered_top10 !== undefined ? [{ label: '▲ Into Page 1',  value: summary.queries_entered_top10, color: C.accent, sub: 'entered page 1',     view: 'movers' as const }] : []),
+          ...(summary.queries_left_top10    !== undefined ? [{ label: '▼ Off Page 1',   value: summary.queries_left_top10,    color: C.orange, sub: 'dropped off page 1', view: 'drops'  as const }] : []),
+        ] as { label: string; value: number; color: string; sub: string; view: typeof subView }[]).map(it => (
+          <button key={it.label} onClick={() => setSubView(it.view)} style={{ all: 'unset' as const, cursor: 'pointer', display: 'block', boxSizing: 'border-box' as const, backgroundColor: `color-mix(in srgb, ${it.color} 8%, transparent)`, border: `2px solid ${subView === it.view ? it.color : `color-mix(in srgb, ${it.color} 22%, transparent)`}`, borderRadius: '0.625rem', padding: '0.75rem 0.875rem', transition: 'border-color 0.15s' }}>
+            <p style={{ fontSize: '0.68rem', fontWeight: 700, color: it.color, margin: '0 0 0.2rem' }}>{it.label}</p>
+            <p style={{ fontSize: '1.4rem', fontWeight: 800, color: it.color, margin: 0, lineHeight: 1, letterSpacing: '-0.03em' }}>{fmtNum(it.value)}</p>
+            <p style={{ fontSize: '0.67rem', color: `color-mix(in srgb, ${it.color} 55%, transparent)`, margin: '0.2rem 0 0' }}>{it.sub}</p>
+          </button>
+        ))}
+      </div>
 
-      {data.new_queries.length > 0 && (
-        <Card>
-          <SectionHeader title="New Queries (appeared this period)" count={data.new_queries.length} color={C.purple} />
-          <DataTable headers={['Query', 'Impressions', 'Position']}>
-            {data.new_queries.map((r, i) => (
-              <TR key={i} last={i === data.new_queries.length - 1}>
-                <td style={{ ...TD, maxWidth: 300, fontWeight: 500 }}>{r.query}</td>
-                <td style={TD}>{fmtNum(r.impressions)}</td>
-                <td style={{ ...TD, color: C.muted }}>{Number(r.position).toFixed(1)}</td>
-              </TR>
-            ))}
-          </DataTable>
-        </Card>
-      )}
+      {/* Detail table */}
+      <Card style={{ overflow: 'hidden' }}>
+        <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, overflowX: 'auto' }}>
+          {([
+            { id: 'movers', label: 'Top Movers',    count: moversRows.length, color: C.green  },
+            { id: 'drops',  label: 'Biggest Drops', count: dropsRows.length,  color: C.red    },
+            { id: 'new',    label: 'New Queries',   count: data.new_queries.length,   color: C.purple },
+            { id: 'lost',   label: 'Lost Queries',  count: data.lost_queries.length,  color: C.faint  },
+          ] as { id: typeof subView; label: string; count: number; color: string }[]).map(s => (
+            <button key={s.id} onClick={() => setSubView(s.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.7rem 1rem', fontSize: '0.8125rem', fontWeight: subView === s.id ? 700 : 500, color: subView === s.id ? s.color : C.muted, background: 'none', border: 'none', borderBottom: `2px solid ${subView === s.id ? s.color : 'transparent'}`, marginBottom: '-1px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {s.label}
+              <span style={{ fontSize: '0.67rem', fontWeight: 700, padding: '0.1rem 0.35rem', borderRadius: '0.25rem', backgroundColor: subView === s.id ? `color-mix(in srgb, ${s.color} 15%, transparent)` : 'rgba(255,255,255,0.05)', color: subView === s.id ? s.color : C.faint }}>{s.count}</span>
+            </button>
+          ))}
+        </div>
 
-      {data.lost_queries.length > 0 && (
-        <Card>
-          <SectionHeader title="Lost Queries (disappeared this period)" count={data.lost_queries.length} color={C.red} />
-          <DataTable headers={['Query', 'Prev Impressions', 'Prev Position']}>
-            {data.lost_queries.map((r, i) => (
-              <TR key={i} last={i === data.lost_queries.length - 1}>
-                <td style={{ ...TD, maxWidth: 300, fontWeight: 500 }}>{r.query}</td>
-                <td style={TD}>{fmtNum(r.prev_impressions)}</td>
-                <td style={{ ...TD, color: C.muted }}>{Number(r.prev_position).toFixed(1)}</td>
-              </TR>
-            ))}
-          </DataTable>
-        </Card>
-      )}
+        {/* Top Movers */}
+        {subView === 'movers' && (
+          moversRows.length === 0
+            ? <EmptyState msg="No significant position improvements this period." />
+            : <DataTable headers={['Query', 'Now', 'Was', 'Pos Δ', 'Impressions', 'Impr Δ', 'Clicks', 'Click Δ']}>
+                {moversRows.map((r, i) => (
+                  <TR key={i} highlight last={i === moversRows.length - 1}>
+                    <td style={{ ...TD, maxWidth: 200, fontWeight: 500 }}>{r.query}</td>
+                    <td style={{ ...TD, color: C.accent, fontWeight: 700 }}>{Number(r.position).toFixed(1)}</td>
+                    <td style={{ ...TD, color: C.muted, fontSize: '0.78rem' }}>{Number(r.prev_position).toFixed(1)}</td>
+                    <td style={{ ...TD, color: C.green, fontWeight: 800 }}>▲ +{r.pos_change}</td>
+                    <td style={TD}>{fmtNum(r.impressions)}</td>
+                    <td style={{ ...TD, color: r.impression_change_pct >= 0 ? C.green : C.red, fontWeight: 600 }}>{r.impression_change_pct >= 0 ? '+' : ''}{r.impression_change_pct}%</td>
+                    <td style={{ ...TD, color: C.accent }}>{fmtNum(r.clicks)}</td>
+                    <td style={{ ...TD, color: r.click_change >= 0 ? C.green : C.red, fontWeight: 600 }}>{r.click_change > 0 ? '+' : ''}{fmtNum(r.click_change)}</td>
+                  </TR>
+                ))}
+              </DataTable>
+        )}
+
+        {/* Biggest Drops */}
+        {subView === 'drops' && (
+          dropsRows.length === 0
+            ? <EmptyState msg="No significant position drops this period." />
+            : <DataTable headers={['Query', 'Now', 'Was', 'Pos Δ', 'Impressions', 'Impr Δ', 'Clicks', 'Click Δ']}>
+                {dropsRows.map((r, i) => (
+                  <TR key={i} last={i === dropsRows.length - 1}>
+                    <td style={{ ...TD, maxWidth: 200, fontWeight: 500 }}>{r.query}</td>
+                    <td style={{ ...TD, color: C.red, fontWeight: 700 }}>{Number(r.position).toFixed(1)}</td>
+                    <td style={{ ...TD, color: C.muted, fontSize: '0.78rem' }}>{Number(r.prev_position).toFixed(1)}</td>
+                    <td style={{ ...TD, color: C.red, fontWeight: 800 }}>▼ {r.pos_change}</td>
+                    <td style={TD}>{fmtNum(r.impressions)}</td>
+                    <td style={{ ...TD, color: r.impression_change_pct >= 0 ? C.green : C.red, fontWeight: 600 }}>{r.impression_change_pct >= 0 ? '+' : ''}{r.impression_change_pct}%</td>
+                    <td style={{ ...TD, color: C.accent }}>{fmtNum(r.clicks)}</td>
+                    <td style={{ ...TD, color: r.click_change >= 0 ? C.green : C.red, fontWeight: 600 }}>{r.click_change > 0 ? '+' : ''}{fmtNum(r.click_change)}</td>
+                  </TR>
+                ))}
+              </DataTable>
+        )}
+
+        {/* New queries */}
+        {subView === 'new' && (
+          data.new_queries.length === 0
+            ? <EmptyState msg="No new queries appeared this period." />
+            : <DataTable headers={['Query', 'Impressions', 'Clicks', 'Position']}>
+                {data.new_queries.map((r, i) => (
+                  <TR key={i} highlight last={i === data.new_queries.length - 1}>
+                    <td style={{ ...TD, maxWidth: 300, fontWeight: 500 }}>{r.query}</td>
+                    <td style={{ ...TD, fontWeight: 700 }}>{fmtNum(r.impressions)}</td>
+                    <td style={{ ...TD, color: C.accent }}>{fmtNum(r.clicks ?? 0)}</td>
+                    <td style={{ ...TD, color: C.muted }}>{Number(r.position).toFixed(1)}</td>
+                  </TR>
+                ))}
+              </DataTable>
+        )}
+
+        {/* Lost queries */}
+        {subView === 'lost' && (
+          data.lost_queries.length === 0
+            ? <EmptyState msg="No queries disappeared this period." />
+            : <DataTable headers={['Query', 'Prev Impressions', 'Prev Clicks', 'Prev Position']}>
+                {data.lost_queries.map((r, i) => (
+                  <TR key={i} last={i === data.lost_queries.length - 1}>
+                    <td style={{ ...TD, maxWidth: 300, fontWeight: 500 }}>{r.query}</td>
+                    <td style={{ ...TD, color: C.muted, fontWeight: 600 }}>{fmtNum(r.prev_impressions)}</td>
+                    <td style={{ ...TD, color: C.muted }}>{fmtNum(r.prev_clicks ?? 0)}</td>
+                    <td style={{ ...TD, color: C.muted }}>{Number(r.prev_position).toFixed(1)}</td>
+                  </TR>
+                ))}
+              </DataTable>
+        )}
+      </Card>
     </div>
   )
 }
@@ -1213,21 +1307,30 @@ export default function QueryIntelligenceClient({ siteId, domain, initialRuns, i
       {analysis && (
         <>
           {/* Summary strip */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '0.75rem' }}>
-            {[
-              { label: 'Queries',     value: fmtNum(analysis.meta.total_queries),    accent: true },
-              { label: 'Impressions', value: fmtNum(analysis.meta.total_impressions) },
-              { label: 'Clicks',      value: fmtNum(analysis.meta.total_clicks)      },
-              { label: 'Avg CTR',     value: fmtPct(analysis.meta.avg_ctr),          accent: true },
-              { label: 'Avg Position', value: Number(analysis.meta.avg_position).toFixed(1) },
-              { label: 'Quick Wins',  value: String(analysis.quick_wins.length),     accent: true },
-            ].map(it => (
-              <div key={it.label} style={{ backgroundColor: C.card, border: `1px solid ${it.accent ? C.borderAccent : C.border}`, borderRadius: '0.75rem', padding: '0.875rem 1rem' }}>
-                <p style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.muted, margin: '0 0 0.25rem' }}>{it.label}</p>
-                <p style={{ fontSize: '1.375rem', fontWeight: 800, color: it.accent ? C.accent : C.text, margin: 0, letterSpacing: '-0.03em' }}>{it.value}</p>
+          {(() => {
+            const cmp = analysis.comparison?.summary
+            const nc = (n: number) => n > 0 ? C.green : n < 0 ? C.red : C.muted
+            const sp = (n: number) => (n > 0 ? '+' : '') + fmtNum(n)
+            const stats = [
+              { label: 'Queries',      value: fmtNum(analysis.meta.total_queries),           accent: true,  delta: undefined as string | undefined, dc: undefined as string | undefined },
+              { label: 'Impressions',  value: fmtNum(analysis.meta.total_impressions),        accent: false, delta: cmp ? sp(cmp.impression_change) : undefined, dc: cmp ? nc(cmp.impression_change) : undefined },
+              { label: 'Clicks',       value: fmtNum(analysis.meta.total_clicks),             accent: false, delta: cmp ? sp(cmp.click_change) : undefined, dc: cmp ? nc(cmp.click_change) : undefined },
+              { label: 'Avg CTR',      value: fmtPct(analysis.meta.avg_ctr),                  accent: true,  delta: cmp?.avg_ctr_change !== undefined ? (cmp.avg_ctr_change > 0 ? '+' : '') + fmtPct(Math.abs(cmp.avg_ctr_change)) : undefined, dc: cmp?.avg_ctr_change !== undefined ? nc(cmp.avg_ctr_change) : undefined },
+              { label: 'Avg Position', value: Number(analysis.meta.avg_position).toFixed(1),  accent: false, delta: cmp ? (cmp.avg_position_change > 0 ? '▲ +' : cmp.avg_position_change < 0 ? '▼ ' : '') + (cmp.avg_position_change !== 0 ? Math.abs(cmp.avg_position_change) : '—') : undefined, dc: cmp ? nc(cmp.avg_position_change) : undefined },
+              { label: 'Quick Wins',   value: String(analysis.quick_wins.length),             accent: true,  delta: undefined, dc: undefined },
+            ]
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '0.75rem' }}>
+                {stats.map(it => (
+                  <div key={it.label} style={{ backgroundColor: C.card, border: `1px solid ${it.accent ? C.borderAccent : C.border}`, borderRadius: '0.75rem', padding: '0.875rem 1rem' }}>
+                    <p style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.muted, margin: '0 0 0.25rem' }}>{it.label}</p>
+                    <p style={{ fontSize: '1.375rem', fontWeight: 800, color: it.accent ? C.accent : C.text, margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>{it.value}</p>
+                    {it.delta !== undefined && <p style={{ fontSize: '0.72rem', fontWeight: 700, color: it.dc, margin: '0.25rem 0 0' }}>{it.delta} vs prev</p>}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )
+          })()}
 
           {/* Tabbed panel */}
           <Card>

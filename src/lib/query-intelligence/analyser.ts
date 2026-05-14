@@ -65,6 +65,9 @@ export interface QuickWin {
   opportunity: 'top3_push' | 'page1_push'
   potential_clicks: number
   lift_estimate: string
+  pos_change?: number      // prev_position − current_position; positive = improved
+  click_change?: number
+  prev_position?: number
 }
 
 export interface CTROpportunity {
@@ -77,6 +80,8 @@ export interface CTROpportunity {
   gap_pct: number
   missed_clicks: number
   priority: 'high' | 'medium'
+  ctr_change?: number      // current − prev; positive = CTR improved
+  pos_change?: number      // positive = position improved
 }
 
 export interface ContentGap {
@@ -209,6 +214,18 @@ export interface PageAnalysis {
   ctr_vs_avg: 'above' | 'below' | 'average'
 }
 
+export interface ComparisonMove {
+  query: string
+  impressions: number
+  clicks: number
+  position: number
+  prev_position: number
+  prev_impressions: number
+  pos_change: number            // positive = improved (position number went down)
+  click_change: number
+  impression_change_pct: number
+}
+
 export interface ComparisonAnalysis {
   summary: {
     click_change: number
@@ -218,13 +235,23 @@ export interface ComparisonAnalysis {
     avg_position_change: number
     total_improved: number
     total_dropped: number
+    // extended fields (present in v2+ analyses)
+    avg_ctr_change?: number
+    total_new?: number
+    total_lost?: number
+    queries_entered_top3?: number
+    queries_left_top3?: number
+    queries_entered_top10?: number
+    queries_left_top10?: number
   }
   improved_positions: Array<{ query: string; from_pos: number; to_pos: number; change: number; impressions: number }>
   dropped_positions: Array<{ query: string; from_pos: number; to_pos: number; change: number; impressions: number }>
   impression_gains: Array<{ query: string; prev: number; current: number; change_pct: number }>
   impression_losses: Array<{ query: string; prev: number; current: number; change_pct: number }>
-  new_queries: Array<{ query: string; impressions: number; position: number }>
-  lost_queries: Array<{ query: string; prev_impressions: number; prev_position: number }>
+  new_queries: Array<{ query: string; impressions: number; clicks?: number; position: number }>
+  lost_queries: Array<{ query: string; prev_impressions: number; prev_clicks?: number; prev_position: number }>
+  top_movers?: ComparisonMove[]
+  biggest_drops?: ComparisonMove[]
 }
 
 export interface QIAnalysis {
@@ -406,6 +433,9 @@ export function analyse(input: AnalyseInput): QIAnalysis {
         opportunity: opp,
         potential_clicks: potential,
         lift_estimate: `+${lift} clicks/mo`,
+        pos_change:    q.prevPosition !== undefined ? Math.round((q.prevPosition - q.position) * 10) / 10 : undefined,
+        click_change:  q.prevClicks   !== undefined ? q.clicks - q.prevClicks : undefined,
+        prev_position: q.prevPosition,
       }
     })
 
@@ -431,6 +461,8 @@ export function analyse(input: AnalyseInput): QIAnalysis {
         gap_pct: Math.round(((exp - q.ctr) / exp) * 100),
         missed_clicks: missed,
         priority: q.ctr < exp * 0.35 ? 'high' as const : 'medium' as const,
+        ctr_change:  q.prevCtr      !== undefined ? Math.round((q.ctr - q.prevCtr) * 10000) / 10000 : undefined,
+        pos_change:  q.prevPosition !== undefined ? Math.round((q.prevPosition - q.position) * 10) / 10 : undefined,
       }
     })
 
@@ -706,7 +738,7 @@ function buildComparison(queries: QueryRow[]): ComparisonAnalysis {
   const improved = withPrev
     .filter(q => (q.prevPosition ?? q.position) - q.position >= 3)
     .sort((a, b) => b.impressions - a.impressions)
-    .slice(0, 20)
+    .slice(0, 25)
     .map(q => ({
       query: q.query,
       from_pos: q.prevPosition ?? q.position,
@@ -718,7 +750,7 @@ function buildComparison(queries: QueryRow[]): ComparisonAnalysis {
   const dropped = withPrev
     .filter(q => q.position - (q.prevPosition ?? q.position) >= 3)
     .sort((a, b) => b.impressions - a.impressions)
-    .slice(0, 20)
+    .slice(0, 25)
     .map(q => ({
       query: q.query,
       from_pos: q.prevPosition ?? q.position,
@@ -765,20 +797,85 @@ function buildComparison(queries: QueryRow[]): ComparisonAnalysis {
 
   const totalPrevClicks = withPrev.reduce((s, q) => s + (q.prevClicks ?? 0), 0)
   const totalCurrClicks = withPrev.reduce((s, q) => s + q.clicks, 0)
-  const totalPrevImps = withPrev.reduce((s, q) => s + (q.prevImpressions ?? 0), 0)
-  const totalCurrImps = withPrev.reduce((s, q) => s + q.impressions, 0)
+  const totalPrevImps   = withPrev.reduce((s, q) => s + (q.prevImpressions ?? 0), 0)
+  const totalCurrImps   = withPrev.reduce((s, q) => s + q.impressions, 0)
   const avgPrevPos = avg(withPrev.filter(q => q.prevPosition).map(q => q.prevPosition!))
   const avgCurrPos = avg(withPrev.map(q => q.position))
+
+  // Impression-weighted CTR change
+  const avgPrevCtr = totalPrevImps > 0
+    ? withPrev.reduce((s, q) => s + (q.prevCtr ?? 0) * (q.prevImpressions ?? 0), 0) / totalPrevImps : 0
+  const avgCurrCtr = totalCurrImps > 0
+    ? withPrev.reduce((s, q) => s + q.ctr * q.impressions, 0) / totalCurrImps : 0
+
+  // SERP position movement counts
+  const queriesEnteredTop3  = withPrev.filter(q => q.position < 4  && (q.prevPosition ?? 99) >= 4).length
+  const queriesLeftTop3     = withPrev.filter(q => q.position >= 4  && (q.prevPosition ?? 99) < 4).length
+  const queriesEnteredTop10 = withPrev.filter(q => q.position < 11  && (q.prevPosition ?? 99) >= 11).length
+  const queriesLeftTop10    = withPrev.filter(q => q.position >= 11 && (q.prevPosition ?? 99) < 11).length
+
+  // Top movers: position improved, ranked by (improvement × log(impressions))
+  const top_movers: ComparisonMove[] = withPrev
+    .filter(q => q.prevPosition !== undefined && q.prevPosition > q.position)
+    .sort((a, b) => {
+      const sA = (a.prevPosition! - a.position) * Math.log(a.impressions + 1)
+      const sB = (b.prevPosition! - b.position) * Math.log(b.impressions + 1)
+      return sB - sA
+    })
+    .slice(0, 30)
+    .map(q => ({
+      query: q.query,
+      impressions: q.impressions,
+      clicks: q.clicks,
+      position: q.position,
+      prev_position: q.prevPosition!,
+      prev_impressions: q.prevImpressions ?? 0,
+      pos_change: Math.round((q.prevPosition! - q.position) * 10) / 10,
+      click_change: q.clicks - (q.prevClicks ?? 0),
+      impression_change_pct: q.prevImpressions
+        ? Math.round(((q.impressions - q.prevImpressions) / q.prevImpressions) * 100) : 0,
+    }))
+
+  // Biggest drops: position declined, ranked by (drop × log(impressions))
+  const biggest_drops: ComparisonMove[] = withPrev
+    .filter(q => q.prevPosition !== undefined && q.position > q.prevPosition)
+    .sort((a, b) => {
+      const sA = (a.position - a.prevPosition!) * Math.log(a.impressions + 1)
+      const sB = (b.position - b.prevPosition!) * Math.log(b.impressions + 1)
+      return sB - sA
+    })
+    .slice(0, 30)
+    .map(q => ({
+      query: q.query,
+      impressions: q.impressions,
+      clicks: q.clicks,
+      position: q.position,
+      prev_position: q.prevPosition!,
+      prev_impressions: q.prevImpressions ?? 0,
+      pos_change: Math.round((q.prevPosition! - q.position) * 10) / 10,  // negative
+      click_change: q.clicks - (q.prevClicks ?? 0),
+      impression_change_pct: q.prevImpressions
+        ? Math.round(((q.impressions - q.prevImpressions) / q.prevImpressions) * 100) : 0,
+    }))
 
   return {
     summary: {
       click_change: totalCurrClicks - totalPrevClicks,
-      click_change_pct: totalPrevClicks > 0 ? Math.round(((totalCurrClicks - totalPrevClicks) / totalPrevClicks) * 100) : 0,
+      click_change_pct: totalPrevClicks > 0
+        ? Math.round(((totalCurrClicks - totalPrevClicks) / totalPrevClicks) * 100) : 0,
       impression_change: totalCurrImps - totalPrevImps,
-      impression_change_pct: totalPrevImps > 0 ? Math.round(((totalCurrImps - totalPrevImps) / totalPrevImps) * 100) : 0,
+      impression_change_pct: totalPrevImps > 0
+        ? Math.round(((totalCurrImps - totalPrevImps) / totalPrevImps) * 100) : 0,
       avg_position_change: Math.round((avgPrevPos - avgCurrPos) * 10) / 10,
       total_improved: improved.length,
       total_dropped: dropped.length,
+      avg_ctr_change: Math.round((avgCurrCtr - avgPrevCtr) * 10000) / 10000,
+      total_new: onlyCurrent.length,
+      total_lost: onlyPrev.length,
+      queries_entered_top3:  queriesEnteredTop3,
+      queries_left_top3:     queriesLeftTop3,
+      queries_entered_top10: queriesEnteredTop10,
+      queries_left_top10:    queriesLeftTop10,
     },
     improved_positions: improved,
     dropped_positions: dropped,
@@ -786,12 +883,14 @@ function buildComparison(queries: QueryRow[]): ComparisonAnalysis {
     impression_losses: impLosses,
     new_queries: onlyCurrent
       .sort((a, b) => b.impressions - a.impressions)
-      .slice(0, 20)
-      .map(q => ({ query: q.query, impressions: q.impressions, position: q.position })),
+      .slice(0, 30)
+      .map(q => ({ query: q.query, impressions: q.impressions, clicks: q.clicks, position: q.position })),
     lost_queries: onlyPrev
       .sort((a, b) => (b.prevImpressions ?? 0) - (a.prevImpressions ?? 0))
-      .slice(0, 20)
-      .map(q => ({ query: q.query, prev_impressions: q.prevImpressions ?? 0, prev_position: q.prevPosition ?? 0 })),
+      .slice(0, 30)
+      .map(q => ({ query: q.query, prev_impressions: q.prevImpressions ?? 0, prev_clicks: q.prevClicks ?? 0, prev_position: q.prevPosition ?? 0 })),
+    top_movers,
+    biggest_drops,
   }
 }
 
