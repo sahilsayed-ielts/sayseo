@@ -13,7 +13,7 @@ export default async function GA4IntelPage({
 
   const { data: site } = await supabase
     .from('connected_sites')
-    .select('id, domain, ga4_property_id, access_token')
+    .select('id, domain')
     .eq('id', siteId)
     .single()
 
@@ -21,24 +21,14 @@ export default async function GA4IntelPage({
 
   const admin = createAdminClient()
 
-  const [runsResult, oauthResult] = await Promise.all([
-    admin
-      .from('ga4_intel_runs')
-      .select('id, fetched_at, row_count, status')
-      .eq('site_id', siteId)
-      .order('fetched_at', { ascending: false })
-      .limit(20),
-    admin
-      .from('oauth_tokens')
-      .select('id')
-      .eq('site_id', siteId)
-      .in('provider', ['ga4', 'gsc'])
-      .limit(1)
-      .maybeSingle(),
-  ])
+  const { data: runsData } = await admin
+    .from('ga4_intel_runs')
+    .select('id, fetched_at, row_count, status, date_from, date_to, source')
+    .eq('site_id', siteId)
+    .order('fetched_at', { ascending: false })
+    .limit(20)
 
-  const runs: GA4Run[] = (runsResult.data ?? []) as GA4Run[]
-  const hasGa4Token = !!(oauthResult.data) || !!(site.access_token)
+  const runs: GA4Run[] = (runsData ?? []) as GA4Run[]
 
   const latestCompleteRun = runs.find((r) => r.status === 'complete')
   let initialAnalysis: GA4AnalysisJSON | null = null
@@ -61,8 +51,6 @@ export default async function GA4IntelPage({
     <GA4IntelClient
       siteId={siteId}
       domain={site.domain}
-      hasGa4Token={hasGa4Token}
-      ga4PropertyId={(site as { ga4_property_id?: string | null }).ga4_property_id ?? null}
       initialRuns={runs}
       initialAnalysis={initialAnalysis}
       initialRunId={initialRunId}
