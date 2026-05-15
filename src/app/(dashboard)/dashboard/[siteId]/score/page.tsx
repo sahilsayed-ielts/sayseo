@@ -217,31 +217,31 @@ export default async function ScorePage({
       {score !== null ? (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <ModuleCard
-            label="Module 1"
-            sublabel="AI Traffic Analytics"
+            label="Search Performance"
+            sublabel="Avg position + CTR from Query Intel"
             score={latestScore?.module1_score ?? null}
-            maxScore={33}
+            maxScore={40}
             colour={colours.hex}
           />
           <ModuleCard
-            label="Module 2"
-            sublabel="Citation Monitor"
+            label="Engagement Quality"
+            sublabel="Engagement rate + time from GA4 Intel"
             score={latestScore?.module2_score ?? null}
-            maxScore={33}
+            maxScore={40}
             colour={colours.hex}
           />
           <ModuleCard
-            label="Module 3"
-            sublabel="AI Overview Tracker"
+            label="AI Overviews"
+            sublabel="Appearance rate from SerpAPI checks"
             score={latestScore?.module3_score ?? null}
-            maxScore={34}
+            maxScore={20}
             colour={colours.hex}
           />
         </div>
       ) : (
         <div className="bg-white/5 border border-white/10 rounded-xl p-6 text-center mb-8">
           <p className="text-sm text-white/40 mb-1">No score calculated yet.</p>
-          <p className="text-xs text-white/25">Click Recalculate to generate your first AI Visibility Score from your live module data.</p>
+          <p className="text-xs text-white/25">Upload Query Intel and GA4 Intel data, then click Recalculate.</p>
         </div>
       )}
 
@@ -249,9 +249,9 @@ export default async function ScorePage({
       <div className="bg-white/5 border border-white/10 rounded-xl p-5 mb-8 text-sm text-white/40 leading-relaxed">
         <p className="font-semibold text-white/60 mb-2 text-xs uppercase tracking-widest">How the score is calculated</p>
         <ul className="space-y-1">
-          <li><span className="text-white/60">Module 1 (max 33)</span> — AI traffic share (20 pts) + positive trend indicator (13 pts)</li>
-          <li><span className="text-white/60">Module 2 (max 33)</span> — Citation rate from Claude web search checks</li>
-          <li><span className="text-white/60">Module 3 (max 34)</span> — AI Overview appearance rate from SerpAPI</li>
+          <li><span className="text-white/60">Search Performance (max 40)</span> — avg position score (20 pts) + avg CTR score (20 pts) from your latest Query Intel upload</li>
+          <li><span className="text-white/60">Engagement Quality (max 40)</span> — engagement rate (25 pts) + avg engagement time (15 pts) from your latest GA4 Intel upload</li>
+          <li><span className="text-white/60">AI Overviews (max 20)</span> — AI Overview appearance rate from SerpAPI checks</li>
         </ul>
       </div>
 

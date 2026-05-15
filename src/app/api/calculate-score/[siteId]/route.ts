@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-interface CachedAiReport {
-  aiPercentage: number
-  aiSources: Array<{ trend: number | null; sessions: number }>
-  topPages: Array<{ url: string; sessions: number }>
-  topQueries: Array<{ query: string; clicks: number }>
+interface QIMeta {
+  avg_position: number
+  avg_ctr: number
+  total_clicks: number
+  total_impressions: number
+}
+
+interface GA4Meta {
+  avg_engagement_rate: number
+  avg_engagement_time: number
+  total_sessions: number
 }
 
 export async function POST(
@@ -28,50 +34,66 @@ export async function POST(
 
   const admin = createAdminClient()
 
-  // ── Module 1: AI traffic data from report cache ────────────────────────────
-  const { data: cacheRow } = await admin
-    .from('report_cache')
-    .select('data')
-    .eq('site_id', siteId)
-    .eq('report_type', 'ai-traffic')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const [
+    { data: qiRow },
+    { data: ga4Row },
+    { data: aioRow },
+  ] = await Promise.all([
+    admin
+      .from('query_intelligence_analyses')
+      .select('analysis_json')
+      .eq('site_id', siteId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    admin
+      .from('ga4_intel_analyses')
+      .select('analysis_json')
+      .eq('site_id', siteId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    admin
+      .from('aio_summary')
+      .select('queries_checked, aio_triggers')
+      .eq('site_id', siteId)
+      .maybeSingle(),
+  ])
 
-  const m1Data = (cacheRow?.data ?? {}) as Partial<CachedAiReport>
-  const aiPercentage = m1Data.aiPercentage ?? 0
-  const trendUp = (m1Data.aiSources ?? []).some(
-    (s) => s.trend !== null && s.trend > 0
-  )
-  const module1_score = Math.min(33, Math.round((aiPercentage / 100) * 20 + (trendUp ? 13 : 0)))
+  // ── Module 1: Search Performance (max 40) ─────────────────────────────────
+  // Source: latest Query Intelligence analysis
+  const qiMeta = (qiRow?.analysis_json as { meta?: QIMeta } | null)?.meta
+  let module1_score = 0
+  if (qiMeta && qiMeta.total_impressions > 0) {
+    // Position score (max 20): position 1 = 20, position 50+ = 0
+    const posScore = Math.max(0, Math.min(20, Math.round(20 - (qiMeta.avg_position - 1) * 0.42)))
+    // CTR score (max 20): 10%+ = full marks
+    const ctrScore = Math.min(20, Math.round((qiMeta.avg_ctr / 0.10) * 20))
+    module1_score = posScore + ctrScore
+  }
 
-  // ── Module 2: citation rate ────────────────────────────────────────────────
-  const { data: citRows } = await admin
-    .from('citation_summary')
-    .select('mention_count, total_checks')
-    .eq('site_id', siteId)
+  // ── Module 2: Engagement Quality (max 40) ─────────────────────────────────
+  // Source: latest GA4 Intel analysis
+  const ga4Meta = (ga4Row?.analysis_json as { meta?: GA4Meta } | null)?.meta
+  let module2_score = 0
+  if (ga4Meta && ga4Meta.total_sessions > 0) {
+    // Engagement rate score (max 25): 65%+ = full marks
+    const erScore = Math.min(25, Math.round((ga4Meta.avg_engagement_rate / 0.65) * 25))
+    // Engagement time score (max 15): 120s+ = full marks
+    const etScore = Math.min(15, Math.round((ga4Meta.avg_engagement_time / 120) * 15))
+    module2_score = erScore + etScore
+  }
 
-  const totalChecks = (citRows ?? []).reduce((s, r) => s + r.total_checks, 0)
-  const totalMentions = (citRows ?? []).reduce((s, r) => s + r.mention_count, 0)
-  const citationRate = totalChecks > 0 ? (totalMentions / totalChecks) * 100 : 0
-  const module2_score = Math.min(33, Math.round((citationRate / 100) * 33))
-
-  // ── Module 3: AIO appearance rate ─────────────────────────────────────────
-  const { data: aioRow } = await admin
-    .from('aio_summary')
-    .select('queries_checked, aio_triggers')
-    .eq('site_id', siteId)
-    .maybeSingle()
-
+  // ── Module 3: AI Overview Rate (max 20) ───────────────────────────────────
   const aioRate =
     (aioRow?.queries_checked ?? 0) > 0
-      ? ((aioRow!.aio_triggers ?? 0) / aioRow!.queries_checked) * 100
+      ? ((aioRow!.aio_triggers ?? 0) / aioRow!.queries_checked)
       : 0
-  const module3_score = Math.min(34, Math.round((aioRate / 100) * 34))
+  const module3_score = Math.min(20, Math.round(aioRate * 20))
 
   const score = module1_score + module2_score + module3_score
 
-  // ── Compute score change against previous row ──────────────────────────────
+  // ── Score change vs previous ──────────────────────────────────────────────
   const { data: prevRow } = await admin
     .from('visibility_scores')
     .select('score')
@@ -82,7 +104,6 @@ export async function POST(
 
   const score_change = prevRow ? score - prevRow.score : 0
 
-  // ── Insert new score row ───────────────────────────────────────────────────
   const { error: insertErr } = await admin.from('visibility_scores').insert({
     site_id: siteId,
     score,
