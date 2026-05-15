@@ -125,10 +125,14 @@ function parseCsvLine(line: string): string[] {
 }
 
 function parseCsvToRows(text: string): Record<string, string>[] {
-  const lines = text.trim().split('\n').filter(l => l.trim())
-  if (lines.length < 2) return []
-  const headers = parseCsvLine(lines[0].replace(/^﻿/, '')).map(h => h.trim().toLowerCase())
-  return lines.slice(1).map(line => {
+  const lines = text.trim().split('\n')
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith('#'))
+  // Find first line with multiple columns — skips any single-value metadata rows
+  const headerIdx = lines.findIndex(l => parseCsvLine(l).length > 1)
+  if (headerIdx === -1 || headerIdx >= lines.length - 1) return []
+  const headers = parseCsvLine(lines[headerIdx].replace(/^﻿/, '')).map(h => h.trim().toLowerCase())
+  return lines.slice(headerIdx + 1).map(line => {
     const vals = parseCsvLine(line)
     return Object.fromEntries(headers.map((h, i) => [h, (vals[i] ?? '').trim()]))
   })
