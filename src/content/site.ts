@@ -8,16 +8,16 @@ export const siteConfig = {
   baseLocation: "London, United Kingdom",
   serviceRegions: ["United Kingdom", "India"],
   description:
-    "Track when ChatGPT, Gemini, and Perplexity cite your website. Monitor AI-generated traffic, citation mentions, and Google AI Overviews — all in one dashboard.",
+    "Independent SEO tool reviews, comparisons, and buying guides for SEO professionals and digital marketers. Find the right tool for every job.",
 };
 
 export const navigation = [
   { label: "Home", href: "/" },
-  { label: "Learn SEO", href: "/learn-seo" },
-  { label: "Tools", href: "/tools" },
-  { label: "SEO Tasks", href: "/seo-tasks" },
-  { label: "Marketplace", href: "/marketplace" },
+  { label: "Reviews", href: "/reviews" },
+  { label: "Comparisons", href: "/comparisons" },
+  { label: "Best Lists", href: "/best-seo-tools" },
   { label: "Blog", href: "/blog" },
+  { label: "Free SEO Tools", href: "/app" },
 ];
 
 export type FAQItem = {

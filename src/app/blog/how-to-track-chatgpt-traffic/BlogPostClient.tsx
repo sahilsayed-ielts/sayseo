@@ -267,13 +267,31 @@ export default function BlogPostClient() {
 
       {/* Nav */}
       <nav className="sticky top-0 z-50 bg-[#0A0A0A]/95 backdrop-blur-md border-b border-white/[0.06]">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center no-underline">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
+          <Link href="/" className="flex items-center no-underline shrink-0">
             <span className="text-[1.1875rem] font-extrabold text-white tracking-tight leading-none">Say</span>
             <span className="text-[1.1875rem] font-extrabold text-[#00D4AA] tracking-tight leading-none">SEO</span>
           </Link>
-          <Link href="/blog" className="text-sm text-white/50 hover:text-white/80 transition-colors no-underline">
+          <div className="hidden md:flex items-center gap-6 text-sm text-white/50">
+            {[
+              { label: 'Reviews', href: '/reviews' },
+              { label: 'Comparisons', href: '/comparisons' },
+              { label: 'Best Lists', href: '/best-seo-tools' },
+              { label: 'Blog', href: '/blog' },
+            ].map(({ label, href }) => (
+              <Link key={label} href={href} className="hover:text-white/90 transition-colors no-underline">
+                {label}
+              </Link>
+            ))}
+          </div>
+          <Link href="/blog" className="text-sm text-white/50 hover:text-white/80 transition-colors no-underline md:hidden">
             ← Blog
+          </Link>
+          <Link
+            href="/app"
+            className="hidden sm:inline-flex items-center px-4 py-2 rounded-lg text-sm font-bold text-[#0A0A0A] bg-[#00D4AA] hover:opacity-88 transition-opacity shrink-0"
+          >
+            Free Tools
           </Link>
         </div>
       </nav>
@@ -458,10 +476,11 @@ export default function BlogPostClient() {
             </div>
             <nav className="flex flex-wrap gap-x-6 gap-y-2 text-[0.8125rem] text-white/35">
               {[
-                { label: 'Features', href: '/#features' },
-                { label: 'Pricing', href: '/#pricing' },
+                { label: 'Reviews', href: '/reviews' },
+                { label: 'Comparisons', href: '/comparisons' },
+                { label: 'Best Lists', href: '/best-seo-tools' },
                 { label: 'Blog', href: '/blog' },
-                { label: 'Login', href: '/auth/login' },
+                { label: 'Free Tools', href: '/app' },
               ].map(({ label, href }) => (
                 <Link key={label} href={href} className="hover:text-white/65 transition-colors no-underline">
                   {label}

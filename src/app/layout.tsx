@@ -28,23 +28,25 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: 'SaySEO — AI Visibility Platform for SEO Professionals',
+    default: 'SaySEO — Independent SEO Tool Reviews & Comparisons',
     template: '%s | SaySEO',
   },
   description: siteConfig.description,
   applicationName: siteConfig.name,
-  category: 'SEO platform',
+  category: 'SEO reviews',
   alternates: {
     canonical: siteConfig.url,
   },
   keywords: [
-    'AI visibility',
-    'SEO platform',
-    'AI traffic attribution',
-    'ChatGPT SEO',
-    'Perplexity SEO',
-    'GA4 integration',
-    'Search Console integration',
+    'SEO tools',
+    'SEO software reviews',
+    'best SEO tools',
+    'Semrush review',
+    'Ahrefs review',
+    'keyword research tools',
+    'backlink analysis tools',
+    'SEO tool comparisons',
+    'digital marketing tools',
   ],
   robots: {
     index: true,
@@ -53,14 +55,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: siteConfig.name,
-    title: 'SaySEO — AI Visibility Platform for SEO Professionals',
+    title: 'SaySEO — Independent SEO Tool Reviews & Comparisons',
     description: siteConfig.description,
     url: siteConfig.url,
     locale: 'en_GB',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SaySEO — AI Visibility Platform for SEO Professionals',
+    title: 'SaySEO — Independent SEO Tool Reviews & Comparisons',
     description: siteConfig.description,
   },
 }
@@ -70,7 +72,7 @@ const websiteJsonLd = {
   '@type': 'WebSite',
   name: 'SaySEO',
   url: 'https://sayseo.co.uk',
-  description: 'Track when ChatGPT, Gemini, and Perplexity cite your website. Monitor AI-generated traffic, citation mentions, and Google AI Overviews — all in one dashboard.',
+  description: 'Independent SEO tool reviews, comparisons, and buying guides for SEO professionals and digital marketers.',
 }
 
 export default function RootLayout({
