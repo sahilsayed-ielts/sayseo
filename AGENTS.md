@@ -1,7 +1,24 @@
 # AGENTS.md
 
+## Content strategy
+The full content strategy for making SaySEO a top-tier SEO affiliate site is at:
+**`docs/content-strategy.md`**
+
+Read that file before doing any affiliate-side work. It specifies:
+- Which pages to build (comparisons, alternatives, pricing, deals, use-case, blog)
+- Exact routes, data structures, and implementation order
+- Which tools to review next and which affiliate programs to prioritise
+- Technical gaps (schema, sitemap, filter interactivity) to fix
+
+### Current implementation priority (Month 1)
+1. Build `src/app/comparisons/[slug]/page.tsx` — detail pages for all 6 comparison stubs
+2. Add `application/ld+json` Review schema + FAQPage schema to `src/app/reviews/[slug]/page.tsx`
+3. Make category filter chips functional in `src/app/reviews/page.tsx`
+4. Build `src/app/affiliate-disclosure/page.tsx` and link it in `src/components/affiliate/AffiliateFooter.tsx`
+5. Update `src/app/sitemap.ts` to enumerate all review and comparison slugs dynamically
+
 ## Project
-SaySEO — an AI visibility platform for SEO professionals. Tracks how much traffic a site receives from AI tools (ChatGPT, Perplexity, Gemini, Claude, etc.) using GA4 and Google Search Console data.
+SaySEO — dual-purpose: (1) SEO affiliate marketing site with independent tool reviews, comparisons, and guides; (2) AI visibility platform dashboard for SEO professionals. Tracks how much traffic a site receives from AI tools (ChatGPT, Perplexity, Gemini, Claude, etc.) using GA4 and Google Search Console data.
 
 ## Stack
 - Next.js 15 App Router

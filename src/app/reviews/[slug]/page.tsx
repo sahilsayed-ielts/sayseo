@@ -13,7 +13,7 @@ const tools: Record<string, ToolData> = {
     rating: 4.8,
     ratingBreakdown: { features: 5.0, value: 4.3, easeOfUse: 4.5, support: 4.7, dataQuality: 4.9 },
     badge: 'Best Overall',
-    badgeColor: '#00D4AA',
+    badgeColor: '#047857',
     category: 'All-in-One',
     price: 'From $139.95/mo',
     trialInfo: '7-day free trial available',
@@ -51,6 +51,8 @@ const tools: Record<string, ToolData> = {
       { plan: 'Business', price: '$499.95/mo', users: 5, projects: 40, keywords: 5000 },
     ],
     alternatives: ['ahrefs', 'se-ranking', 'moz-pro'],
+    initial: 'S',
+    initialBg: '#1D4ED8',
   },
   ahrefs: {
     name: 'Ahrefs',
@@ -58,7 +60,7 @@ const tools: Record<string, ToolData> = {
     rating: 4.7,
     ratingBreakdown: { features: 4.8, value: 4.3, easeOfUse: 4.5, support: 4.4, dataQuality: 5.0 },
     badge: 'Best for Links',
-    badgeColor: '#f59e0b',
+    badgeColor: '#B45309',
     category: 'All-in-One',
     price: 'From $129/mo',
     trialInfo: '$7 for 7-day trial (Starter)',
@@ -96,6 +98,8 @@ const tools: Record<string, ToolData> = {
       { plan: 'Advanced', price: '$449/mo', users: 3, projects: 50, keywords: 5000 },
     ],
     alternatives: ['semrush', 'se-ranking', 'moz-pro'],
+    initial: 'A',
+    initialBg: '#D97706',
   },
   'se-ranking': {
     name: 'SE Ranking',
@@ -103,7 +107,7 @@ const tools: Record<string, ToolData> = {
     rating: 4.5,
     ratingBreakdown: { features: 4.4, value: 4.9, easeOfUse: 4.7, support: 4.5, dataQuality: 4.2 },
     badge: 'Best Value',
-    badgeColor: '#8b5cf6',
+    badgeColor: '#6D28D9',
     category: 'All-in-One',
     price: 'From $65/mo',
     trialInfo: '14-day free trial, no card required',
@@ -141,6 +145,8 @@ const tools: Record<string, ToolData> = {
       { plan: 'Business', price: '$259/mo', users: 5, projects: 'Unlimited', keywords: 5000 },
     ],
     alternatives: ['semrush', 'ahrefs', 'mangools'],
+    initial: 'SE',
+    initialBg: '#7C3AED',
   },
   'surfer-seo': {
     name: 'Surfer SEO',
@@ -148,7 +154,7 @@ const tools: Record<string, ToolData> = {
     rating: 4.4,
     ratingBreakdown: { features: 4.5, value: 4.2, easeOfUse: 4.6, support: 4.3, dataQuality: 4.4 },
     badge: 'Best for Content',
-    badgeColor: '#3b82f6',
+    badgeColor: '#1D4ED8',
     category: 'Content',
     price: 'From $99/mo',
     trialInfo: '7-day money-back guarantee',
@@ -186,6 +192,8 @@ const tools: Record<string, ToolData> = {
       { plan: 'Enterprise', price: 'Custom', users: 'Custom', projects: 'Unlimited', keywords: 'Custom' },
     ],
     alternatives: ['semrush', 'se-ranking', 'moz-pro'],
+    initial: 'Su',
+    initialBg: '#2563EB',
   },
   'screaming-frog': {
     name: 'Screaming Frog',
@@ -193,7 +201,7 @@ const tools: Record<string, ToolData> = {
     rating: 4.6,
     ratingBreakdown: { features: 5.0, value: 4.9, easeOfUse: 3.5, support: 4.0, dataQuality: 5.0 },
     badge: 'Best Technical',
-    badgeColor: '#ef4444',
+    badgeColor: '#B91C1C',
     category: 'Technical',
     price: 'Free / £259/yr',
     trialInfo: 'Free version crawls up to 500 URLs',
@@ -230,6 +238,8 @@ const tools: Record<string, ToolData> = {
       { plan: 'Paid Licence', price: '£259/yr', users: 1, projects: 'Unlimited', keywords: 'Unlimited URLs' },
     ],
     alternatives: ['semrush', 'se-ranking', 'ahrefs'],
+    initial: 'SF',
+    initialBg: '#DC2626',
   },
   'moz-pro': {
     name: 'Moz Pro',
@@ -237,7 +247,7 @@ const tools: Record<string, ToolData> = {
     rating: 4.2,
     ratingBreakdown: { features: 4.0, value: 4.2, easeOfUse: 4.7, support: 4.3, dataQuality: 4.0 },
     badge: 'Best for DA/PA',
-    badgeColor: '#06b6d4',
+    badgeColor: '#0891B2',
     category: 'All-in-One',
     price: 'From $99/mo',
     trialInfo: '30-day free trial',
@@ -275,6 +285,8 @@ const tools: Record<string, ToolData> = {
       { plan: 'Medium', price: '$299/mo', users: 2, projects: 25, keywords: 700 },
     ],
     alternatives: ['semrush', 'ahrefs', 'se-ranking'],
+    initial: 'M',
+    initialBg: '#0891B2',
   },
   mangools: {
     name: 'Mangools',
@@ -282,7 +294,7 @@ const tools: Record<string, ToolData> = {
     rating: 4.3,
     ratingBreakdown: { features: 4.1, value: 4.8, easeOfUse: 5.0, support: 4.4, dataQuality: 4.1 },
     badge: 'Easiest to Use',
-    badgeColor: '#10b981',
+    badgeColor: '#047857',
     category: 'Keyword Research',
     price: 'From $29/mo',
     trialInfo: '10-day free trial',
@@ -319,6 +331,8 @@ const tools: Record<string, ToolData> = {
       { plan: 'Premium', price: '$69/mo', users: 3, projects: 'Unlimited', keywords: '500 lookups/day' },
     ],
     alternatives: ['se-ranking', 'moz-pro', 'semrush'],
+    initial: 'Ma',
+    initialBg: '#059669',
   },
   spyfu: {
     name: 'SpyFu',
@@ -326,7 +340,7 @@ const tools: Record<string, ToolData> = {
     rating: 4.1,
     ratingBreakdown: { features: 4.0, value: 4.6, easeOfUse: 4.2, support: 3.9, dataQuality: 4.1 },
     badge: 'Best for Competitor Intel',
-    badgeColor: '#f97316',
+    badgeColor: '#C2410C',
     category: 'Competitor Research',
     price: 'From $39/mo',
     trialInfo: 'Free plan with limited access',
@@ -362,39 +376,72 @@ const tools: Record<string, ToolData> = {
       { plan: 'Professional', price: '$79/mo', users: 5, projects: 'Unlimited', keywords: 'Unlimited + API' },
     ],
     alternatives: ['semrush', 'se-ranking', 'ahrefs'],
+    initial: 'Sp',
+    initialBg: '#EA580C',
   },
 }
 
-type PricingRow = {
-  plan: string
-  price: string
-  users: number | string
-  projects: number | string
-  keywords: number | string
-}
-
+type PricingRow = { plan: string; price: string; users: number | string; projects: number | string; keywords: number | string }
 type ToolData = {
-  name: string
-  tagline: string
-  rating: number
+  name: string; tagline: string; rating: number
   ratingBreakdown: Record<string, number>
-  badge: string
-  badgeColor: string
-  category: string
-  price: string
-  trialInfo: string
-  affiliateUrl: string
-  summary: string
-  pros: string[]
-  cons: string[]
-  bestFor: string
-  verdict: string
+  badge: string; badgeColor: string; category: string
+  price: string; trialInfo: string; affiliateUrl: string
+  summary: string; pros: string[]; cons: string[]
+  bestFor: string; verdict: string
   keyFeatures: { name: string; description: string }[]
   pricing: PricingRow[]
   alternatives: string[]
+  initial: string; initialBg: string
+}
+type FAQItem = { question: string; answer: string }
+
+const REVIEW_DATE = '2026-05-20'
+
+function getToolFaqs(tool: ToolData): FAQItem[] {
+  const altNames = tool.alternatives.filter((s) => tools[s]).map((s) => tools[s].name).join(', ')
+  return [
+    { question: `Is ${tool.name} worth it?`, answer: `${tool.name} earns a ${tool.rating}/5 in our review. ${tool.verdict}` },
+    { question: `Who is ${tool.name} best for?`, answer: tool.bestFor },
+    { question: `Does ${tool.name} offer a free trial?`, answer: tool.trialInfo },
+    { question: `What are the biggest drawbacks of ${tool.name}?`, answer: tool.cons.slice(0, 3).join('. ') + '.' },
+    {
+      question: `What are the best alternatives to ${tool.name}?`,
+      answer: altNames
+        ? `The closest alternatives are ${altNames}. The right choice depends on whether you prioritise price, data depth, technical SEO, or content workflows.`
+        : `${tool.name} is best compared against other tools based on price, feature depth, and ease of use.`,
+    },
+  ]
 }
 
-// ─── Generate static params ───────────────────────────────────────────────────
+function getReviewJsonLd(tool: ToolData, slug: string) {
+  return {
+    '@context': 'https://schema.org', '@type': 'Review',
+    name: `${tool.name} Review`, reviewBody: tool.verdict,
+    datePublished: REVIEW_DATE, dateModified: REVIEW_DATE,
+    url: `https://sayseo.co.uk/reviews/${slug}`,
+    author: { '@type': 'Organization', name: 'SaySEO Editorial Team' },
+    publisher: { '@type': 'Organization', name: 'SaySEO', url: 'https://sayseo.co.uk' },
+    reviewRating: { '@type': 'Rating', ratingValue: tool.rating, bestRating: 5, worstRating: 1 },
+    itemReviewed: {
+      '@type': 'SoftwareApplication', name: tool.name,
+      applicationCategory: `${tool.category} SEO Software`,
+      operatingSystem: tool.name === 'Screaming Frog' ? 'Windows, macOS, Linux' : 'Web',
+      description: tool.summary,
+      url: `https://sayseo.co.uk/reviews/${slug}`,
+    },
+  }
+}
+
+function getFaqJsonLd(faqs: FAQItem[]) {
+  return {
+    '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question', name: faq.question,
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+    })),
+  }
+}
 
 export function generateStaticParams() {
   return Object.keys(tools).map((slug) => ({ slug }))
@@ -417,33 +464,48 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-// ─── Components ───────────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function ScoreCircle({ score, size = 'md' }: { score: number; size?: 'sm' | 'md' | 'lg' }) {
+  const bg = score >= 4.5 ? '#047857' : score >= 4.0 ? '#059669' : score >= 3.5 ? '#D97706' : '#DC2626'
+  const dim = size === 'lg' ? 72 : size === 'sm' ? 40 : 56
+  const text = size === 'lg' ? 'text-2xl' : size === 'sm' ? 'text-sm' : 'text-lg'
+  return (
+    <div
+      className={`rounded-full flex items-center justify-center font-extrabold text-white shrink-0 ${text}`}
+      style={{ backgroundColor: bg, width: dim, height: dim }}
+      aria-label={`${score} out of 5`}
+    >
+      {score}
+    </div>
+  )
+}
 
 function Stars({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' | 'lg' }) {
   const dim = size === 'lg' ? 18 : size === 'sm' ? 12 : 14
   return (
-    <div className="flex items-center gap-1" aria-label={`${rating} out of 5`}>
+    <div className="flex items-center gap-0.5" aria-hidden="true">
       {[1, 2, 3, 4, 5].map((star) => (
-        <svg key={star} width={dim} height={dim} viewBox="0 0 24 24" fill={star <= Math.floor(rating) ? '#f59e0b' : star - 0.5 <= rating ? '#f59e0b' : 'none'} stroke="#f59e0b" strokeWidth="1.5" aria-hidden="true">
+        <svg key={star} width={dim} height={dim} viewBox="0 0 24 24"
+          fill={star <= Math.floor(rating) ? '#F59E0B' : star - 0.5 <= rating ? '#F59E0B' : 'none'}
+          stroke="#F59E0B" strokeWidth="1.5">
           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
         </svg>
       ))}
-      <span className={`font-bold text-white/70 ml-1 ${size === 'lg' ? 'text-base' : 'text-[0.8125rem]'}`}>{rating}/5</span>
     </div>
   )
 }
 
 function RatingBar({ label, value }: { label: string; value: number }) {
+  const pct = Math.round((value / 5) * 100)
+  const color = value >= 4.5 ? '#047857' : value >= 4.0 ? '#059669' : value >= 3.5 ? '#D97706' : '#DC2626'
   return (
     <div className="flex items-center gap-3">
-      <span className="text-[0.8125rem] text-white/50 w-28 shrink-0">{label}</span>
-      <div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full bg-[#00D4AA]"
-          style={{ width: `${(value / 5) * 100}%` }}
-        />
+      <span className="text-sm text-gray-600 w-32 shrink-0">{label}</span>
+      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
-      <span className="text-[0.8125rem] font-bold text-white/60 w-6 text-right">{value}</span>
+      <span className="text-sm font-bold text-gray-700 w-6 text-right">{value}</span>
     </div>
   )
 }
@@ -455,240 +517,367 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
   const tool = tools[slug]
   if (!tool) notFound()
 
-  const altTools = tool.alternatives
-    .filter((s) => tools[s])
-    .map((s) => ({ slug: s, ...tools[s] }))
+  const altTools = tool.alternatives.filter((s) => tools[s]).map((s) => ({ slug: s, ...tools[s] }))
+  const faqs = getToolFaqs(tool)
+  const reviewJsonLd = getReviewJsonLd(tool, slug)
+  const faqJsonLd = getFaqJsonLd(faqs)
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <AffiliateNav />
 
-      {/* ── Breadcrumb ─────────────────────────────────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-6 pt-6 pb-2">
-        <nav className="flex items-center gap-1.5 text-[0.8125rem] text-white/35">
-          <Link href="/" className="hover:text-white/60 transition-colors">Home</Link>
-          <span>/</span>
-          <Link href="/reviews" className="hover:text-white/60 transition-colors">Reviews</Link>
-          <span>/</span>
-          <span className="text-white/55">{tool.name}</span>
-        </nav>
+      {/* ── Page header band ───────────────────────────────────────────────────── */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 pb-7">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-5">
+            <Link href="/" className="hover:text-emerald-700 transition-colors">Home</Link>
+            <span>/</span>
+            <Link href="/reviews" className="hover:text-emerald-700 transition-colors">Reviews</Link>
+            <span>/</span>
+            <span className="text-gray-600 font-medium">{tool.name}</span>
+          </nav>
+
+          <div className="flex items-start gap-4">
+            <div
+              className="w-14 h-14 rounded-xl flex items-center justify-center text-base font-extrabold text-white shrink-0"
+              style={{ backgroundColor: tool.initialBg }}
+            >
+              {tool.initial}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span
+                  className="px-2.5 py-1 rounded-full text-xs font-bold text-white"
+                  style={{ backgroundColor: tool.badgeColor }}
+                >
+                  {tool.badge}
+                </span>
+                <span className="px-2.5 py-1 rounded-full bg-gray-100 text-xs text-gray-500 font-medium">{tool.category}</span>
+                <span className="text-xs text-gray-400">Updated {new Date(REVIEW_DATE).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+              </div>
+              <h1 className="text-[clamp(1.625rem,4vw,2.5rem)] font-extrabold text-gray-900 tracking-tight leading-tight mb-1">
+                {tool.name} Review
+              </h1>
+              <p className="text-sm text-gray-500">{tool.tagline}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* ── Hero ───────────────────────────────────────────────────────────────── */}
-      <section className="max-w-4xl mx-auto px-6 pt-8 pb-12">
-        <div className="flex items-start gap-4 mb-6">
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-2.5 mb-3">
-              <span
-                className="px-3 py-1 rounded-full text-[0.75rem] font-bold text-[#0A0A0A]"
-                style={{ backgroundColor: tool.badgeColor }}
-              >
-                {tool.badge}
-              </span>
-              <span className="px-2.5 py-1 rounded-full bg-white/[0.06] text-[0.75rem] text-white/45">
-                {tool.category}
-              </span>
-            </div>
-            <h1 className="text-[clamp(2rem,5vw,3rem)] font-extrabold text-white tracking-[-0.03em] leading-tight mb-2">
-              {tool.name} Review
-            </h1>
-            <p className="text-[1rem] text-white/50">{tool.tagline}</p>
-          </div>
-        </div>
+      {/* ── Body: two-column on desktop ────────────────────────────────────────── */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+        <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-8 items-start">
 
-        {/* Rating + price + CTA row */}
-        <div className="flex flex-wrap items-center gap-5 p-6 bg-[#111111] border border-white/[0.08] rounded-xl mb-8">
-          <div>
-            <Stars rating={tool.rating} size="lg" />
-            <p className="text-[0.75rem] text-white/35 mt-1">Our rating</p>
-          </div>
-          <div className="h-10 w-px bg-white/[0.06] hidden sm:block" />
-          <div>
-            <p className="text-[0.9375rem] font-bold text-white">{tool.price}</p>
-            <p className="text-[0.75rem] text-white/35 mt-0.5">{tool.trialInfo}</p>
-          </div>
-          <div className="h-10 w-px bg-white/[0.06] hidden sm:block" />
-          <div className="flex gap-3 ml-auto">
-            <a
-              href={tool.affiliateUrl}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              id="try"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-[0.9375rem] font-bold text-[#0A0A0A] bg-[#00D4AA] hover:opacity-88 transition-opacity"
-            >
-              Try {tool.name} Free
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </a>
-          </div>
-        </div>
+          {/* ── Main content column ─────────────────────────────────────────────── */}
+          <div className="space-y-8">
 
-        {/* Summary */}
-        <p className="text-[1.0625rem] text-white/55 leading-[1.8]">{tool.summary}</p>
-      </section>
+            {/* Our Take box (NerdWallet signature) */}
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
+              <p className="text-xs font-extrabold text-emerald-700 uppercase tracking-[0.12em] mb-4">Our Take</p>
+              <div className="flex items-start gap-5 mb-5">
+                <div className="flex flex-col items-center gap-1.5 shrink-0">
+                  <ScoreCircle score={tool.rating} size="lg" />
+                  <p className="text-[0.65rem] text-gray-500 text-center leading-tight">SaySEO<br />Rating</p>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Stars rating={tool.rating} size="md" />
+                    <span className="text-sm font-bold text-gray-700">{tool.rating}/5</span>
+                  </div>
+                  <p className="text-gray-700 leading-relaxed text-sm">{tool.verdict}</p>
+                </div>
+              </div>
 
-      {/* ── Pros & Cons ────────────────────────────────────────────────────────── */}
-      <section className="max-w-4xl mx-auto px-6 pb-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="bg-[#111111] border border-[#00D4AA]/15 rounded-xl p-6">
-            <h2 className="text-[0.9375rem] font-bold text-[#00D4AA] mb-4">What we like</h2>
-            <ul className="space-y-3">
-              {tool.pros.map((pro) => (
-                <li key={pro} className="flex items-start gap-2.5 text-[0.9rem] text-white/65">
-                  <svg className="w-4 h-4 text-[#00D4AA] shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-                    <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+              <div className="flex flex-wrap gap-2.5 pt-4 border-t border-emerald-200">
+                <a
+                  href={tool.affiliateUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  id="try"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 transition-colors shadow-sm"
+                >
+                  Try {tool.name} Free
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  {pro}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="bg-[#111111] border border-red-500/15 rounded-xl p-6">
-            <h2 className="text-[0.9375rem] font-bold text-red-400/80 mb-4">What to watch out for</h2>
-            <ul className="space-y-3">
-              {tool.cons.map((con) => (
-                <li key={con} className="flex items-start gap-2.5 text-[0.9rem] text-white/65">
-                  <svg className="w-4 h-4 text-red-400/70 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-                    <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {con}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Rating Breakdown ───────────────────────────────────────────────────── */}
-      <section className="max-w-4xl mx-auto px-6 pb-12">
-        <div className="bg-[#111111] border border-white/[0.08] rounded-xl p-7">
-          <h2 className="text-[1.0625rem] font-bold text-white mb-6">Rating breakdown</h2>
-          <div className="space-y-4">
-            {Object.entries(tool.ratingBreakdown).map(([label, value]) => (
-              <RatingBar
-                key={label}
-                label={label.replace(/([A-Z])/g, ' $1').replace(/^\w/, (c) => c.toUpperCase())}
-                value={value}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Key Features ───────────────────────────────────────────────────────── */}
-      <section className="max-w-4xl mx-auto px-6 pb-12">
-        <h2 className="text-[1.25rem] font-bold text-white mb-6 tracking-[-0.015em]">Key features</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {tool.keyFeatures.map((f) => (
-            <div key={f.name} className="bg-[#111111] border border-white/[0.07] rounded-xl p-5">
-              <h3 className="text-[0.9375rem] font-bold text-white mb-1.5">{f.name}</h3>
-              <p className="text-[0.875rem] text-white/45 leading-relaxed">{f.description}</p>
+                </a>
+                <p className="text-xs text-emerald-700/60 self-center">{tool.trialInfo}</p>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* ── Pricing ────────────────────────────────────────────────────────────── */}
-      <section className="max-w-4xl mx-auto px-6 pb-12">
-        <h2 className="text-[1.25rem] font-bold text-white mb-6 tracking-[-0.015em]">Pricing</h2>
-        <div className="overflow-x-auto rounded-xl border border-white/[0.08]">
-          <table className="w-full text-[0.875rem]">
-            <thead>
-              <tr className="border-b border-white/[0.07] bg-[#111111]">
-                <th className="text-left px-5 py-3.5 text-white/45 font-semibold">Plan</th>
-                <th className="text-left px-5 py-3.5 text-white/45 font-semibold">Price</th>
-                <th className="text-left px-5 py-3.5 text-white/45 font-semibold">Users</th>
-                <th className="text-left px-5 py-3.5 text-white/45 font-semibold">Projects</th>
-                <th className="text-left px-5 py-3.5 text-white/45 font-semibold">Keywords / Limit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tool.pricing.map((row, i) => (
-                <tr key={row.plan} className={`border-b border-white/[0.05] ${i % 2 === 0 ? 'bg-[#0E0E0E]' : 'bg-[#111111]'}`}>
-                  <td className="px-5 py-3.5 font-semibold text-white">{row.plan}</td>
-                  <td className="px-5 py-3.5 text-[#00D4AA] font-bold">{row.price}</td>
-                  <td className="px-5 py-3.5 text-white/55">{row.users}</td>
-                  <td className="px-5 py-3.5 text-white/55">{row.projects}</td>
-                  <td className="px-5 py-3.5 text-white/55">{row.keywords}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="text-[0.75rem] text-white/30 mt-3">Pricing accurate as of 2026. Check the tool's website for current rates.</p>
-      </section>
+            {/* Overview */}
+            <section>
+              <h2 className="text-lg font-extrabold text-gray-900 mb-3 tracking-tight">Overview</h2>
+              <p className="text-gray-600 leading-relaxed">{tool.summary}</p>
+            </section>
 
-      {/* ── Best for + Verdict ─────────────────────────────────────────────────── */}
-      <section className="max-w-4xl mx-auto px-6 pb-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="bg-[#111111] border border-white/[0.08] rounded-xl p-6">
-            <p className="text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-[#00D4AA] mb-3">Best for</p>
-            <p className="text-[0.9375rem] text-white/70 leading-relaxed">{tool.bestFor}</p>
+            {/* Pros & Cons */}
+            <section>
+              <h2 className="text-lg font-extrabold text-gray-900 mb-4 tracking-tight">Pros &amp; Cons</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-white border border-emerald-100 rounded-xl p-5 shadow-sm">
+                  <h3 className="text-sm font-bold text-emerald-700 mb-3 flex items-center gap-2">
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                      <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    What we like
+                  </h3>
+                  <ul className="space-y-2.5">
+                    {tool.pros.map((pro) => (
+                      <li key={pro} className="flex items-start gap-2 text-sm text-gray-600">
+                        <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                          <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        {pro}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-white border border-red-100 rounded-xl p-5 shadow-sm">
+                  <h3 className="text-sm font-bold text-red-600 mb-3 flex items-center gap-2">
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                      <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    What to watch out for
+                  </h3>
+                  <ul className="space-y-2.5">
+                    {tool.cons.map((con) => (
+                      <li key={con} className="flex items-start gap-2 text-sm text-gray-600">
+                        <svg className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                          <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        {con}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            {/* Rating breakdown */}
+            <section>
+              <h2 className="text-lg font-extrabold text-gray-900 mb-4 tracking-tight">Rating Breakdown</h2>
+              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm space-y-4">
+                {Object.entries(tool.ratingBreakdown).map(([label, value]) => (
+                  <RatingBar
+                    key={label}
+                    label={label.replace(/([A-Z])/g, ' $1').replace(/^\w/, (c) => c.toUpperCase())}
+                    value={value}
+                  />
+                ))}
+              </div>
+            </section>
+
+            {/* Key features */}
+            <section>
+              <h2 className="text-lg font-extrabold text-gray-900 mb-4 tracking-tight">Key Features</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {tool.keyFeatures.map((f) => (
+                  <div key={f.name} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                    <h3 className="text-sm font-bold text-gray-900 mb-1.5">{f.name}</h3>
+                    <p className="text-sm text-gray-500 leading-relaxed">{f.description}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Pricing */}
+            <section>
+              <h2 className="text-lg font-extrabold text-gray-900 mb-4 tracking-tight">Pricing</h2>
+              <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                <table className="w-full text-sm min-w-[520px]">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left px-5 py-3 font-semibold text-gray-500">Plan</th>
+                      <th className="text-left px-5 py-3 font-semibold text-gray-500">Price</th>
+                      <th className="text-left px-5 py-3 font-semibold text-gray-500">Users</th>
+                      <th className="text-left px-5 py-3 font-semibold text-gray-500">Projects</th>
+                      <th className="text-left px-5 py-3 font-semibold text-gray-500">Keywords / Limit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tool.pricing.map((row, i) => (
+                      <tr key={row.plan} className={`border-b border-gray-100 last:border-0 ${i % 2 === 1 ? 'bg-gray-50/40' : 'bg-white'}`}>
+                        <td className="px-5 py-3.5 font-semibold text-gray-900">{row.plan}</td>
+                        <td className="px-5 py-3.5 font-bold text-emerald-700">{row.price}</td>
+                        <td className="px-5 py-3.5 text-gray-600">{row.users}</td>
+                        <td className="px-5 py-3.5 text-gray-600">{row.projects}</td>
+                        <td className="px-5 py-3.5 text-gray-600">{row.keywords}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-gray-400 mt-2.5">Pricing accurate as of 2026. Verify current rates on the tool's website.</p>
+            </section>
+
+            {/* Best for + Verdict */}
+            <section>
+              <h2 className="text-lg font-extrabold text-gray-900 mb-4 tracking-tight">Bottom Line</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                  <p className="text-xs font-bold text-emerald-700 uppercase tracking-[0.1em] mb-2">Best For</p>
+                  <p className="text-sm text-gray-700 leading-relaxed">{tool.bestFor}</p>
+                </div>
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 shadow-sm">
+                  <p className="text-xs font-bold text-emerald-700 uppercase tracking-[0.1em] mb-2">Our Verdict</p>
+                  <p className="text-sm text-gray-700 leading-relaxed italic">{tool.verdict}</p>
+                </div>
+              </div>
+            </section>
+
+            {/* FAQs */}
+            <section>
+              <h2 className="text-lg font-extrabold text-gray-900 mb-4 tracking-tight">Frequently Asked Questions</h2>
+              <div className="space-y-3">
+                {faqs.map((faq) => (
+                  <div key={faq.question} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                    <h3 className="text-sm font-bold text-gray-900 mb-2">{faq.question}</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">{faq.answer}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* CTA section */}
+            <section>
+              <div className="rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-900 p-8 text-center flex flex-col items-center shadow-lg">
+                <h2 className="text-xl font-extrabold text-white tracking-tight mb-2">
+                  Ready to try {tool.name}?
+                </h2>
+                <p className="text-sm text-white/75 mb-6">{tool.trialInfo}</p>
+                <a
+                  href={tool.affiliateUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg text-sm font-bold text-emerald-800 bg-white hover:bg-gray-50 transition-colors shadow-sm"
+                >
+                  Get Started with {tool.name}
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </a>
+                <p className="text-xs text-white/40 mt-3">Affiliate link — we may earn a commission at no cost to you.</p>
+              </div>
+            </section>
+
           </div>
-          <div
-            className="bg-[#111111] border border-[#00D4AA]/20 rounded-xl p-6"
-            style={{ background: 'radial-gradient(ellipse at 0% 0%, rgba(0,212,170,0.05) 0%, transparent 60%), #111111' }}
-          >
-            <p className="text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-[#00D4AA] mb-3">Our verdict</p>
-            <p className="text-[0.9375rem] text-white/70 leading-relaxed italic">{tool.verdict}</p>
-          </div>
-        </div>
-      </section>
 
-      {/* ── CTA ────────────────────────────────────────────────────────────────── */}
-      <section className="max-w-4xl mx-auto px-6 pb-16">
-        <div
-          className="rounded-2xl p-10 text-center border border-[#00D4AA]/22 flex flex-col items-center"
-          style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(0,212,170,0.07) 0%, transparent 70%), #111111' }}
-        >
-          <h2 className="text-[1.5rem] font-extrabold text-white tracking-[-0.025em] mb-2">
-            Ready to try {tool.name}?
-          </h2>
-          <p className="text-[0.9375rem] text-white/45 mb-7">{tool.trialInfo}</p>
-          <a
-            href={tool.affiliateUrl}
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg text-[0.9375rem] font-bold text-[#0A0A0A] bg-[#00D4AA] hover:opacity-88 transition-opacity"
-          >
-            Get Started with {tool.name}
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
-          <p className="text-[0.75rem] text-white/25 mt-3">
-            Affiliate link — we may earn a commission at no cost to you.
-          </p>
-        </div>
-      </section>
+          {/* ── Sticky sidebar ──────────────────────────────────────────────────── */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-20 space-y-4">
 
-      {/* ── Alternatives ───────────────────────────────────────────────────────── */}
+              {/* Score card */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.1em] mb-4">SaySEO Rating</p>
+                <div className="flex items-center gap-4 mb-5">
+                  <ScoreCircle score={tool.rating} size="lg" />
+                  <div>
+                    <Stars rating={tool.rating} size="lg" />
+                    <p className="text-sm text-gray-500 mt-1">{tool.rating} out of 5</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Starting price</span>
+                    <span className="font-bold text-gray-900">{tool.price}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Free trial</span>
+                    <span className="font-medium text-emerald-700 text-right max-w-[140px]">{tool.trialInfo}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Category</span>
+                    <span className="font-medium text-gray-700">{tool.category}</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 pt-4 mb-4">
+                  <p className="text-xs text-gray-500 mb-1.5"><span className="font-semibold text-gray-700">Best for:</span></p>
+                  <p className="text-xs text-gray-600 leading-relaxed">{tool.bestFor}</p>
+                </div>
+
+                <a
+                  href={tool.affiliateUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 transition-colors"
+                >
+                  Visit {tool.name}
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </a>
+                <p className="text-[0.65rem] text-gray-400 text-center mt-2">Affiliate link</p>
+              </div>
+
+              {/* Badge breakdown */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.1em] mb-3">Score Breakdown</p>
+                <div className="space-y-2.5">
+                  {Object.entries(tool.ratingBreakdown).map(([label, value]) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 w-24 shrink-0">
+                        {label.replace(/([A-Z])/g, ' $1').replace(/^\w/, (c) => c.toUpperCase())}
+                      </span>
+                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-emerald-600"
+                          style={{ width: `${(value / 5) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-gray-600">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      {/* ── Alternatives ─────────────────────────────────────────────────────── */}
       {altTools.length > 0 && (
-        <section className="border-t border-white/[0.05]">
-          <div className="max-w-4xl mx-auto px-6 py-14">
-            <h2 className="text-[1.25rem] font-bold text-white mb-6 tracking-[-0.015em]">
-              Compare alternatives
-            </h2>
+        <section className="border-t border-gray-200 bg-white">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
+            <h2 className="text-lg font-extrabold text-gray-900 mb-6 tracking-tight">Compare Alternatives</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {altTools.map((alt) => (
                 <Link
                   key={alt.slug}
                   href={`/reviews/${alt.slug}`}
-                  className="flex flex-col gap-2 bg-[#111111] border border-white/[0.08] rounded-xl p-5 hover:border-[#00D4AA]/25 transition-colors"
+                  className="group flex flex-col gap-3 bg-white border border-gray-200 rounded-xl p-5 hover:border-emerald-300 hover:shadow-sm transition-all duration-200"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white">{alt.name}</span>
-                    <span
-                      className="px-2 py-0.5 rounded-full text-[0.65rem] font-bold text-[#0A0A0A]"
-                      style={{ backgroundColor: alt.badgeColor }}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-extrabold text-white shrink-0"
+                      style={{ backgroundColor: alt.initialBg }}
                     >
-                      {alt.badge}
-                    </span>
+                      {alt.initial}
+                    </div>
+                    <div>
+                      <span className="text-sm font-bold text-gray-900">{alt.name}</span>
+                      <span
+                        className="ml-2 px-1.5 py-0.5 rounded text-[0.6rem] font-bold text-white"
+                        style={{ backgroundColor: alt.badgeColor }}
+                      >
+                        {alt.badge}
+                      </span>
+                    </div>
                   </div>
-                  <Stars rating={alt.rating} size="sm" />
-                  <p className="text-[0.8125rem] text-white/40">{alt.price}</p>
-                  <span className="text-[0.875rem] font-semibold text-[#00D4AA] mt-1">Read review →</span>
+                  <div className="flex items-center gap-2">
+                    <ScoreCircle score={alt.rating} size="sm" />
+                    <div>
+                      <Stars rating={alt.rating} size="sm" />
+                      <p className="text-xs text-gray-400">{alt.price}</p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-semibold text-emerald-700 group-hover:underline">Read review →</span>
                 </Link>
               ))}
             </div>

@@ -3,49 +3,60 @@
 import Link from 'next/link'
 import { useState } from 'react'
 
+const navLinks = [
+  { label: 'Reviews', href: '/reviews' },
+  { label: 'Comparisons', href: '/comparisons' },
+  { label: 'Best Tools', href: '/best-seo-tools' },
+  { label: 'Free Tools', href: '/tools' },
+  { label: 'Blog', href: '/blog' },
+]
+
 export function AffiliateNav() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <nav className="sticky top-0 z-50 bg-[#0A0A0A]/95 backdrop-blur-md border-b border-white/[0.06]">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
+    <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-[60px] flex items-center justify-between gap-4">
+
         {/* Logo */}
-        <Link href="/" className="flex items-center shrink-0 no-underline">
-          <span className="text-[1.1875rem] font-extrabold text-white tracking-tight leading-none">Say</span>
-          <span className="text-[1.1875rem] font-extrabold text-[#00D4AA] tracking-tight leading-none">SEO</span>
+        <Link href="/" className="flex items-center shrink-0">
+          <span className="text-[1.125rem] font-extrabold text-gray-900 tracking-tight leading-none">Say</span>
+          <span className="text-[1.125rem] font-extrabold text-emerald-700 tracking-tight leading-none">SEO</span>
         </Link>
 
-        {/* Desktop links */}
-        <div className="hidden md:flex items-center gap-7 text-sm text-white/50">
-          {[
-            { label: 'Reviews', href: '/reviews' },
-            { label: 'Comparisons', href: '/comparisons' },
-            { label: 'Best Lists', href: '/best-seo-tools' },
-            { label: 'Blog', href: '/blog' },
-          ].map(({ label, href }) => (
-            <Link key={label} href={href} className="hover:text-white/90 transition-colors duration-150">
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center gap-0.5">
+          {navLinks.map(({ label, href }) => (
+            <Link
+              key={label}
+              href={href}
+              className="px-3.5 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-100 hover:text-emerald-700 transition-colors duration-150"
+            >
               {label}
             </Link>
           ))}
-        </div>
+        </nav>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <Link
-            href="/app"
-            className="hidden sm:inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold text-white/60 border border-white/[0.14] hover:border-white/25 hover:text-white/90 transition-colors duration-150"
+            href="/tools"
+            className="hidden sm:inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-600 border border-gray-200 hover:border-emerald-600 hover:text-emerald-700 transition-colors duration-150"
           >
-            Free SEO Tools
+            Free Tools
           </Link>
           <Link
             href="/reviews"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-[#0A0A0A] bg-[#00D4AA] hover:opacity-88 transition-opacity duration-150 whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white bg-emerald-700 hover:bg-emerald-800 transition-colors duration-150 whitespace-nowrap"
           >
             Browse Reviews
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+              <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </Link>
 
           {/* Mobile toggle */}
           <button
-            className="md:hidden p-2 text-white/50 hover:text-white"
+            className="md:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
           >
@@ -60,25 +71,19 @@ export function AffiliateNav() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-white/[0.06] bg-[#0A0A0A] px-6 py-4 flex flex-col gap-3">
-          {[
-            { label: 'Reviews', href: '/reviews' },
-            { label: 'Comparisons', href: '/comparisons' },
-            { label: 'Best Lists', href: '/best-seo-tools' },
-            { label: 'Blog', href: '/blog' },
-            { label: 'Free SEO Tools', href: '/app' },
-          ].map(({ label, href }) => (
+        <div className="md:hidden border-t border-gray-200 bg-white px-4 py-3 flex flex-col gap-0.5 shadow-lg">
+          {[...navLinks, { label: 'Browse Reviews', href: '/reviews' }].map(({ label, href }) => (
             <Link
               key={label}
               href={href}
               onClick={() => setMobileOpen(false)}
-              className="text-sm text-white/60 hover:text-white transition-colors py-1"
+              className="px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-emerald-700 rounded-md transition-colors"
             >
               {label}
             </Link>
           ))}
         </div>
       )}
-    </nav>
+    </header>
   )
 }

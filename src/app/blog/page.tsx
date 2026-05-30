@@ -30,49 +30,54 @@ const posts = [
 
 export default function BlogPage() {
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col">
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
       <AffiliateNav />
 
-      {/* ── Hero ───────────────────────────────────────────────────────────────── */}
-      <section className="max-w-7xl mx-auto w-full px-6 pt-16 pb-12">
-        <p className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-[#00D4AA] mb-4">
-          Blog
-        </p>
-        <h1 className="text-[clamp(2.25rem,5vw,3.5rem)] font-extrabold text-white tracking-[-0.03em] leading-[1.07] mb-4">
-          SaySEO Blog
-        </h1>
-        <p className="text-[1.0625rem] text-white/50 leading-[1.75] max-w-[560px]">
-          In-depth guides on AI search, SEO strategy, tool reviews, and digital marketing.
-        </p>
-      </section>
+      {/* ── Page Header ──────────────────────────────────────────────────────── */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-10 pb-8">
+          <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-5">
+            <Link href="/" className="hover:text-emerald-700 transition-colors">Home</Link>
+            <span>/</span>
+            <span className="text-gray-600 font-medium">Blog</span>
+          </nav>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-emerald-700 mb-3">Blog</p>
+          <h1 className="text-[clamp(1.875rem,4vw,2.75rem)] font-extrabold text-gray-900 tracking-tight leading-tight mb-3">
+            SaySEO Blog
+          </h1>
+          <p className="text-base text-gray-500 leading-relaxed max-w-[540px]">
+            In-depth guides on AI search, SEO strategy, tool reviews, and digital marketing.
+          </p>
+        </div>
+      </div>
 
-      {/* ── Posts grid ─────────────────────────────────────────────────────────── */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-6 pb-20">
+      {/* ── Posts grid ────────────────────────────────────────────────────────── */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-10 pb-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {posts.map((post) => (
             <Link
               key={post.href}
               href={post.href}
-              className="group flex flex-col gap-4 bg-[#111111] border border-white/[0.08] border-l-[3px] border-l-transparent rounded-xl p-7 no-underline hover:border-l-[#00D4AA] hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3),0_0_0_1px_rgba(0,212,170,0.12)] transition-all duration-200"
+              className="group flex flex-col gap-4 bg-white border border-gray-200 rounded-xl p-7 hover:shadow-sm hover:border-emerald-200 transition-all duration-200"
             >
-              <div className="flex flex-wrap items-center gap-2.5 text-[0.8125rem] font-semibold text-white/45">
-                <span className="px-2.5 py-1 rounded-full border border-[#00D4AA]/40 text-[#00D4AA] text-[0.6875rem] font-bold tracking-[0.1em] uppercase">
+              <div className="flex flex-wrap items-center gap-2.5 text-xs text-gray-400">
+                <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold tracking-wide uppercase">
                   {post.category}
                 </span>
                 <span>{post.date}</span>
-                <span className="text-white/25">&middot;</span>
+                <span>·</span>
                 <span>{post.readTime}</span>
               </div>
 
-              <h2 className="text-[1.25rem] font-bold text-white leading-snug tracking-[-0.015em] m-0">
+              <h2 className="text-lg font-bold text-gray-900 leading-snug group-hover:text-emerald-700 transition-colors">
                 {post.title}
               </h2>
 
-              <p className="text-[0.9375rem] text-white/50 leading-[1.7] m-0">
+              <p className="text-sm text-gray-500 leading-relaxed">
                 {post.excerpt}
               </p>
 
-              <span className="mt-auto text-[0.9rem] font-bold text-[#00D4AA] group-hover:underline">
+              <span className="mt-auto text-sm font-semibold text-emerald-700 group-hover:underline">
                 Read the guide →
               </span>
             </Link>

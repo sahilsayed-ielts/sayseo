@@ -8,6 +8,7 @@
 }
 
 :root {
+  /* Dashboard dark theme vars (keep for backward compat) */
   --background: #0A0A0A;
   --foreground: #ffffff;
   --accent: #00D4AA;
@@ -53,15 +54,16 @@ li {
 }
 
 ::selection {
-  background: #00D4AA;
-  color: #0A0A0A;
+  background: #6EE7B7;
+  color: #064E3B;
 }
 
 :focus-visible {
-  outline: 2px solid rgba(0, 212, 170, 0.7);
+  outline: 2px solid rgba(4, 120, 87, 0.5);
   outline-offset: 3px;
 }
 
+/* Dashboard dark utilities */
 .section-space {
   @apply py-18 md:py-24;
 }
@@ -88,13 +90,14 @@ li {
   padding: 1.5rem;
 }
 
+/* Dashboard form inputs (hardcoded dark) */
 input,
 select,
 textarea {
   background-color: #1a1a1a;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 0.5rem;
-  color: var(--foreground);
+  color: #ffffff;
 }
 
 input::placeholder,
