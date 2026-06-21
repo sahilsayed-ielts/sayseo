@@ -107,14 +107,14 @@ export function wikipediaToQueries(
 
 // ─── Transform: website headings → SourceQuery[] ─────────────────────────────
 
-export function sitemapToQueries(headings: string[]): SourceQuery[] {
-  return headings
-    .filter((h) => h.length > 10 && h.length < 120)
-    .slice(0, 8)
-    .map((h) => {
-      const intent = classifyIntent(h)
+export function sitemapToQueries(signals: string[]): SourceQuery[] {
+  return signals
+    .filter((s) => s.length > 8 && s.length < 200)
+    .slice(0, 12)
+    .map((s) => {
+      const intent = classifyIntent(s)
       return {
-        query: h,
+        query: s,
         sourceType: 'Extracted from website',
         intent,
         funnelStage: classifyFunnel(intent),
