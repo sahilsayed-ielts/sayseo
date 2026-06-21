@@ -6,7 +6,7 @@ import { AffiliateFooter } from '@/components/affiliate/AffiliateFooter'
 export const metadata: Metadata = {
   title: 'Free SEO Tools for Professionals — No Signup Required | SaySEO',
   description:
-    'Free online SEO tools built for agency professionals. SERP snippet preview, title tag analyser, schema markup generator, keyword density checker, GEO prompt mapper, SEO ROI calculator, and robots.txt generator — all in your browser, no signup required.',
+    'Free online SEO tools built for agency professionals. SERP snippet preview, title tag analyser, schema markup generator, keyword density checker, SEO ROI calculator, and robots.txt generator — all in your browser, no signup required.',
   keywords: [
     'free SEO tools', 'SERP preview tool', 'title tag analyser', 'schema markup generator',
     'keyword density checker', 'SEO ROI calculator', 'robots txt generator', 'SEO tools UK',
@@ -17,14 +17,14 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: 'SaySEO',
     title: 'Free SEO Tools for Professionals | SaySEO',
-    description: 'Seven free SEO tools built for agency professionals. No signup, no API keys, no data sent anywhere.',
+    description: 'Six free SEO tools built for agency professionals. No signup, no API keys, no data sent anywhere.',
     url: 'https://sayseo.co.uk/tools',
     locale: 'en_GB',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Free SEO Tools for Professionals | SaySEO',
-    description: 'Seven free SEO tools built for agency professionals. No signup required.',
+    description: 'Six free SEO tools built for agency professionals. No signup required.',
   },
   robots: { index: true, follow: true },
 }
@@ -102,16 +102,6 @@ const toolCategories = [
     description: 'Quantify the value of SEO to stakeholders and clients.',
     tools: [
       {
-        slug: 'geo-prompt-mapper',
-        name: 'GEO Prompt Mapper',
-        description: 'Map AI search prompts using free sources only — autocomplete, PAA, Reddit, Wikipedia, sitemaps, and predicted prompts. No paid SEO APIs required.',
-        time: '3 mins',
-        badge: 'AI Visibility',
-        badgeColor: '#7C3AED',
-        icon: '🗺️',
-        use: 'Plan GEO content by mapping discovered queries, extracted questions, and AI citation opportunities.',
-      },
-      {
         slug: 'seo-roi-calculator',
         name: 'SEO ROI Calculator',
         description: 'Calculate the expected traffic, leads, and revenue return from moving up the SERPs. Uses position-to-CTR data for accurate projections.',
@@ -163,7 +153,7 @@ export default function ToolsPage() {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: 'Free SEO Tools for Professionals',
-    description: 'Seven free SEO tools built for agency professionals — SERP preview, title tag analyser, schema generator, keyword density, SEO ROI calculator, robots.txt generator, GEO prompt mapper.',
+    description: 'Six free SEO tools built for agency professionals — SERP preview, title tag analyser, schema generator, keyword density, SEO ROI calculator, robots.txt generator.',
     url: 'https://sayseo.co.uk/tools',
     publisher: {
       '@type': 'Organization',
@@ -211,13 +201,13 @@ export default function ToolsPage() {
             </h1>
 
             <p className="text-lg text-gray-500 leading-[1.75] mb-8 max-w-[600px]">
-              Seven purpose-built tools for the tasks SEO professionals do every day — previewing snippets, building schema markup, checking keyword density, mapping GEO prompts, and calculating ROI. All free, all in-browser.
+              Six purpose-built tools for the tasks SEO professionals do every day — previewing snippets, building schema markup, checking keyword density, and calculating ROI. All free, all in-browser.
             </p>
 
             {/* Trust bar */}
             <div className="flex flex-wrap items-center gap-6 pt-6 border-t border-gray-100">
               {[
-                { value: '7', label: 'Free Tools' },
+                { value: '6', label: 'Free Tools' },
                 { value: '0', label: 'Signup Required' },
                 { value: '100%', label: 'Browser-Based' },
                 { value: 'Agency', label: 'Focused' },

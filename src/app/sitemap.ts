@@ -64,7 +64,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     pageEntry('/tools/keyword-density', 'monthly', 0.82),
     pageEntry('/tools/seo-roi-calculator', 'monthly', 0.82),
     pageEntry('/tools/robots-txt-generator', 'monthly', 0.82),
-    pageEntry('/tools/geo-prompt-mapper', 'monthly', 0.82),
     pageEntry('/blog', 'weekly', 0.8),
     pageEntry('/affiliate-disclosure', 'yearly', 0.4),
     pageEntry('/app', 'weekly', 0.75),
