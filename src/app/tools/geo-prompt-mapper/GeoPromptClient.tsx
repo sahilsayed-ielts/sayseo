@@ -1,34 +1,44 @@
 'use client'
 
 import { useState } from 'react'
-import { generateGeoResults, GeoResults, PromptResult, UserInputs } from '@/lib/geo/promptGenerator'
-import { SourceType, IntentType } from '@/lib/geo/freeSources'
+import {
+  assembleResults,
+  GeoResults,
+  PromptResult,
+  UserInputs,
+} from '@/lib/geo/promptGenerator'
+import {
+  SourceType,
+  IntentType,
+  autocompleteToQueries,
+  redditToQueries,
+  wikipediaToQueries,
+  sitemapToQueries,
+  dedupeQueries,
+  getFallbackQueries,
+} from '@/lib/geo/freeSources'
 import { promptsToCSV, downloadCSV } from '@/lib/geo/csvExport'
 
-// ─── Badge helpers ────────────────────────────────────────────────────────────
+// ─── Badge styles ─────────────────────────────────────────────────────────────
 
 const SOURCE_STYLES: Record<SourceType, string> = {
-  'Verified free source':  'bg-emerald-50 text-emerald-700 border border-emerald-200',
-  'Extracted from website':'bg-blue-50 text-blue-700 border border-blue-200',
-  'Predicted AI prompt':   'bg-purple-50 text-purple-700 border border-purple-200',
-  'GEO opportunity':       'bg-amber-50 text-amber-700 border border-amber-200',
+  'Verified free source':   'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  'Extracted from website': 'bg-blue-50 text-blue-700 border border-blue-200',
 }
 
 const SOURCE_DOTS: Record<SourceType, string> = {
-  'Verified free source':  'bg-emerald-500',
-  'Extracted from website':'bg-blue-500',
-  'Predicted AI prompt':   'bg-purple-500',
-  'GEO opportunity':       'bg-amber-500',
+  'Verified free source':   'bg-emerald-500',
+  'Extracted from website': 'bg-blue-500',
 }
 
 const INTENT_STYLES: Record<IntentType, string> = {
-  Informational:    'bg-sky-50 text-sky-700',
-  Commercial:       'bg-emerald-50 text-emerald-700',
-  Comparison:       'bg-purple-50 text-purple-700',
-  Local:            'bg-orange-50 text-orange-700',
-  'Problem-solving':'bg-red-50 text-red-700',
-  'Trust-building': 'bg-yellow-50 text-yellow-700',
-  Transactional:    'bg-teal-50 text-teal-700',
+  Informational:     'bg-sky-50 text-sky-700',
+  Commercial:        'bg-emerald-50 text-emerald-700',
+  Comparison:        'bg-purple-50 text-purple-700',
+  Local:             'bg-orange-50 text-orange-700',
+  'Problem-solving': 'bg-red-50 text-red-700',
+  'Trust-building':  'bg-yellow-50 text-yellow-700',
+  Transactional:     'bg-teal-50 text-teal-700',
 }
 
 const FUNNEL_STYLES = {
@@ -43,30 +53,37 @@ const PRIORITY_COLORS = {
   Low:    'text-gray-400',
 }
 
-// ─── Score dot ────────────────────────────────────────────────────────────────
+// ─── Score dots ───────────────────────────────────────────────────────────────
 
 function ScoreDot({ value }: { value: number }) {
-  const colors = ['bg-gray-200', 'bg-red-300', 'bg-orange-300', 'bg-yellow-300', 'bg-emerald-400', 'bg-emerald-600']
+  const colors = ['', 'bg-red-300', 'bg-orange-300', 'bg-yellow-300', 'bg-emerald-400', 'bg-emerald-600']
   return (
     <span className="inline-flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((i) => (
-        <span
-          key={i}
-          className={`w-2 h-2 rounded-full ${i <= value ? colors[value] : 'bg-gray-100'}`}
-        />
+        <span key={i} className={`w-2 h-2 rounded-full ${i <= value ? colors[value] : 'bg-gray-100'}`} />
       ))}
     </span>
   )
 }
 
-// ─── Source legend ────────────────────────────────────────────────────────────
+// ─── Source status types ──────────────────────────────────────────────────────
 
-const ALL_SOURCE_TYPES: SourceType[] = [
-  'Verified free source',
-  'Extracted from website',
-  'Predicted AI prompt',
-  'GEO opportunity',
-]
+type FetchStatus = 'idle' | 'loading' | 'success' | 'error' | 'empty'
+
+interface SourceState {
+  status: FetchStatus
+  count: number
+  label: string
+}
+
+type SourceKey = 'autocomplete' | 'reddit' | 'wikipedia' | 'sitemap'
+
+const SOURCE_META: Record<SourceKey, { label: string; detail: string; color: string }> = {
+  autocomplete: { label: 'Autocomplete (DuckDuckGo / Google)', detail: 'Real search query patterns', color: 'text-sky-600' },
+  reddit:       { label: 'Reddit Discussions',                  detail: 'Top community questions and threads', color: 'text-orange-600' },
+  wikipedia:    { label: 'Wikipedia Entity Expansion',           detail: 'Related topics and concepts', color: 'text-gray-600' },
+  sitemap:      { label: 'Website Analysis',                     detail: 'Headings extracted from your site', color: 'text-blue-600' },
+}
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
 
@@ -80,7 +97,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'brief',   label: 'Content Brief' },
 ]
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Defaults ─────────────────────────────────────────────────────────────────
 
 const DEFAULTS: UserInputs = {
   websiteUrl:   'https://ieltstrainingcamp.com',
@@ -90,26 +107,104 @@ const DEFAULTS: UserInputs = {
   businessGoal: 'Promote online IELTS courses',
 }
 
+const IDLE_SOURCES: Record<SourceKey, SourceState> = {
+  autocomplete: { status: 'idle', count: 0, label: SOURCE_META.autocomplete.label },
+  reddit:       { status: 'idle', count: 0, label: SOURCE_META.reddit.label },
+  wikipedia:    { status: 'idle', count: 0, label: SOURCE_META.wikipedia.label },
+  sitemap:      { status: 'idle', count: 0, label: SOURCE_META.sitemap.label },
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function GeoPromptClient() {
-  const [inputs, setInputs]     = useState<UserInputs>(DEFAULTS)
-  const [results, setResults]   = useState<GeoResults | null>(null)
-  const [loading, setLoading]   = useState(false)
+  const [inputs, setInputs]       = useState<UserInputs>(DEFAULTS)
+  const [results, setResults]     = useState<GeoResults | null>(null)
+  const [loading, setLoading]     = useState(false)
+  const [sources, setSources]     = useState<Record<SourceKey, SourceState>>(IDLE_SOURCES)
   const [activeTab, setActiveTab] = useState<Tab>('prompts')
   const [filterSource, setFilterSource] = useState<SourceType | 'All'>('All')
-  const [briefCopied, setBriefCopied] = useState(false)
+  const [briefCopied, setBriefCopied]   = useState(false)
+  const [usedFallback, setUsedFallback] = useState(false)
 
   function handleChange(key: keyof UserInputs, value: string) {
     setInputs((prev) => ({ ...prev, [key]: value }))
   }
 
-  function handleGenerate() {
+  function updateSource(key: SourceKey, patch: Partial<SourceState>) {
+    setSources((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }))
+  }
+
+  async function fetchSource<T>(
+    url: string,
+    key: SourceKey,
+    transform: (data: T) => ReturnType<typeof autocompleteToQueries>,
+    dataKey: keyof T,
+  ) {
+    updateSource(key, { status: 'loading' })
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error('non-200')
+      const data: T = await res.json()
+      const queries = transform(data)
+      updateSource(key, {
+        status: queries.length > 0 ? 'success' : 'empty',
+        count: queries.length,
+      })
+      return queries
+    } catch {
+      updateSource(key, { status: 'error', count: 0 })
+      return []
+    }
+  }
+
+  async function handleGenerate() {
     setLoading(true)
-    setTimeout(() => {
-      setResults(generateGeoResults(inputs))
-      setLoading(false)
-      setActiveTab('prompts')
-      setFilterSource('All')
-    }, 800)
+    setResults(null)
+    setUsedFallback(false)
+    setSources(IDLE_SOURCES)
+    setActiveTab('prompts')
+    setFilterSource('All')
+
+    const q  = encodeURIComponent(`${inputs.topic} ${inputs.country}`)
+    const t  = encodeURIComponent(inputs.topic)
+    const u  = encodeURIComponent(inputs.websiteUrl)
+
+    const [autoQ, redditQ, wikiQ, siteQ] = await Promise.all([
+      fetchSource<{ suggestions: string[]; source: string }>(
+        `/api/geo/autocomplete?q=${q}`,
+        'autocomplete',
+        (d) => autocompleteToQueries(d.suggestions ?? []),
+        'suggestions',
+      ),
+      fetchSource<{ posts: Array<{ title: string; score: number }>; source: string }>(
+        `/api/geo/reddit?q=${t}`,
+        'reddit',
+        (d) => redditToQueries(d.posts ?? [], inputs.topic),
+        'posts',
+      ),
+      fetchSource<{ topics: string[]; descriptions: string[]; source: string }>(
+        `/api/geo/wikipedia?q=${t}`,
+        'wikipedia',
+        (d) => wikipediaToQueries(d.topics ?? [], inputs.topic, inputs.audience, inputs.country),
+        'topics',
+      ),
+      fetchSource<{ headings: string[]; urls: string[]; domain: string; source: string }>(
+        `/api/geo/sitemap?url=${u}`,
+        'sitemap',
+        (d) => sitemapToQueries(d.headings ?? []),
+        'headings',
+      ),
+    ])
+
+    let queries = dedupeQueries([...autoQ, ...redditQ, ...wikiQ, ...siteQ])
+
+    if (queries.length === 0) {
+      queries = getFallbackQueries(inputs.topic, inputs.country, inputs.audience)
+      setUsedFallback(true)
+    }
+
+    setResults(assembleResults(queries, inputs))
+    setLoading(false)
   }
 
   function handleCSV() {
@@ -132,12 +227,14 @@ export default function GeoPromptClient() {
       `CONTENT GOAL: ${b.contentGoal}`,
       '',
       'SECTIONS:',
-      ...b.sections.map((s) => [
-        `H2: ${s.h2}`,
-        ...(s.h3s.length ? s.h3s.map((h) => `  H3: ${h}`) : []),
-        `  Notes: ${s.notes}`,
-        `  Target words: ${s.wordCount}`,
-      ].join('\n')),
+      ...b.sections.map((s) =>
+        [
+          `H2: ${s.h2}`,
+          ...(s.h3s.length ? s.h3s.map((h) => `  H3: ${h}`) : []),
+          `  Notes: ${s.notes}`,
+          `  Target words: ${s.wordCount}`,
+        ].join('\n'),
+      ),
       '',
       `SCHEMA TYPES: ${b.schemaTypes.join(', ')}`,
       `CTA: ${b.cta}`,
@@ -154,7 +251,6 @@ export default function GeoPromptClient() {
       : results.prompts.filter((p) => p.sourceType === filterSource)
     : []
 
-  // Group prompts by intent
   const byIntent = results
     ? results.prompts.reduce<Record<string, PromptResult[]>>((acc, p) => {
         if (!acc[p.intent]) acc[p.intent] = []
@@ -163,6 +259,35 @@ export default function GeoPromptClient() {
       }, {})
     : {}
 
+  const allSourceTypes = [...new Set(results?.prompts.map((p) => p.sourceType) ?? [])] as SourceType[]
+
+  // ── Status icon helper
+  function StatusIcon({ status }: { status: FetchStatus }) {
+    if (status === 'idle') return <span className="w-4 h-4 rounded-full bg-gray-200 inline-block" />
+    if (status === 'loading') return (
+      <svg className="w-4 h-4 animate-spin text-emerald-600" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      </svg>
+    )
+    if (status === 'success') return (
+      <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+    )
+    if (status === 'empty') return (
+      <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    )
+    // error
+    return (
+      <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    )
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-10">
 
@@ -170,15 +295,14 @@ export default function GeoPromptClient() {
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-100 bg-gray-50">
           <h2 className="text-[0.9375rem] font-extrabold text-gray-900">Enter your details</h2>
-          <p className="text-xs text-gray-500 mt-0.5">All fields are used to generate relevant, audience-specific GEO prompts.</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Fetches live data from DuckDuckGo, Reddit, Wikipedia and your website — no API key required.
+          </p>
         </div>
 
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Website URL */}
           <div className="md:col-span-2">
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              Website URL
-            </label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Website URL</label>
             <input
               type="url"
               value={inputs.websiteUrl}
@@ -188,11 +312,8 @@ export default function GeoPromptClient() {
             />
           </div>
 
-          {/* Topic */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              Topic / Service
-            </label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Topic / Service</label>
             <input
               type="text"
               value={inputs.topic}
@@ -202,11 +323,8 @@ export default function GeoPromptClient() {
             />
           </div>
 
-          {/* Target country */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              Target Country
-            </label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Target Country</label>
             <input
               type="text"
               value={inputs.country}
@@ -216,11 +334,8 @@ export default function GeoPromptClient() {
             />
           </div>
 
-          {/* Audience */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              Target Audience
-            </label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Target Audience</label>
             <input
               type="text"
               value={inputs.audience}
@@ -230,11 +345,8 @@ export default function GeoPromptClient() {
             />
           </div>
 
-          {/* Business goal */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              Business Goal
-            </label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Business Goal</label>
             <input
               type="text"
               value={inputs.businessGoal}
@@ -257,7 +369,7 @@ export default function GeoPromptClient() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Generating prompts…
+                Fetching live data…
               </>
             ) : (
               <>
@@ -271,6 +383,51 @@ export default function GeoPromptClient() {
         </div>
       </div>
 
+      {/* ── Live source status panel ────────────────────────────────────────── */}
+      {(loading || results) && (
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50 flex items-center gap-2">
+            <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+            <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">
+              {loading ? 'Fetching live data from free sources…' : 'Data sources used'}
+            </p>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {(Object.keys(SOURCE_META) as SourceKey[]).map((key) => {
+              const meta = SOURCE_META[key]
+              const state = sources[key]
+              return (
+                <div key={key} className="flex items-center gap-3 px-5 py-3">
+                  <StatusIcon status={state.status} />
+                  <div className="flex-1 min-w-0">
+                    <span className={`text-xs font-semibold ${meta.color}`}>{meta.label}</span>
+                    <span className="text-xs text-gray-400 ml-2">— {meta.detail}</span>
+                  </div>
+                  {state.status === 'success' && (
+                    <span className="text-xs font-bold text-emerald-700">{state.count} found</span>
+                  )}
+                  {state.status === 'empty' && (
+                    <span className="text-xs text-amber-500">0 matches</span>
+                  )}
+                  {state.status === 'error' && (
+                    <span className="text-xs text-red-400">unavailable</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          {usedFallback && (
+            <div className="px-5 py-3 bg-amber-50 border-t border-amber-100">
+              <p className="text-xs text-amber-700">
+                <span className="font-semibold">Note:</span> All live sources returned empty results — showing deterministic fallback prompts based on your inputs. Try a broader topic or check your internet connection.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Results ─────────────────────────────────────────────────────────── */}
       {results && (
         <div className="space-y-6">
@@ -281,9 +438,9 @@ export default function GeoPromptClient() {
               <div className="flex flex-wrap gap-5">
                 <div>
                   <span className="text-2xl font-extrabold text-emerald-700">{results.prompts.length}</span>
-                  <span className="text-xs text-gray-500 ml-1.5">Total prompts</span>
+                  <span className="text-xs text-gray-500 ml-1.5">prompts generated</span>
                 </div>
-                {ALL_SOURCE_TYPES.map((st) => {
+                {allSourceTypes.map((st) => {
                   const count = results.prompts.filter((p) => p.sourceType === st).length
                   return (
                     <div key={st} className="flex items-center gap-1.5">
@@ -293,7 +450,6 @@ export default function GeoPromptClient() {
                   )
                 })}
               </div>
-
               <button
                 onClick={handleCSV}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-colors"
@@ -330,7 +486,7 @@ export default function GeoPromptClient() {
             <div className="space-y-4">
               {/* Source filter */}
               <div className="flex flex-wrap gap-2">
-                {(['All', ...ALL_SOURCE_TYPES] as const).map((st) => (
+                {(['All', ...allSourceTypes] as Array<'All' | SourceType>).map((st) => (
                   <button
                     key={st}
                     onClick={() => setFilterSource(st)}
@@ -350,7 +506,7 @@ export default function GeoPromptClient() {
                 ))}
               </div>
 
-              {/* Prompt table */}
+              {/* Table */}
               <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -413,10 +569,10 @@ export default function GeoPromptClient() {
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Score key</p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-gray-600">
                   {[
-                    { label: 'SD — Search Demand', desc: 'How widely searched this query pattern is likely to be' },
-                    { label: 'AI — AI Answer Potential', desc: 'How likely an AI engine would use this as a direct question to answer' },
-                    { label: 'CI — Commercial Intent', desc: 'How directly this query relates to purchase or conversion' },
-                    { label: 'Gap — Content Gap', desc: 'How underserved this query is likely to be on your site' },
+                    { label: 'SD — Search Demand', desc: 'How widely searched this query type is likely to be' },
+                    { label: 'AI — AI Answer Potential', desc: 'How likely AI engines are to use this as a question to answer' },
+                    { label: 'CI — Commercial Intent', desc: 'How directly related to purchase or conversion' },
+                    { label: 'Gap — Content Gap', desc: 'How underserved this query likely is on your site' },
                   ].map((item) => (
                     <div key={item.label}>
                       <span className="font-semibold text-gray-700">{item.label}</span>
@@ -452,7 +608,7 @@ export default function GeoPromptClient() {
                             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-semibold ${SOURCE_STYLES[p.sourceType]}`}>
                               {p.sourceType}
                             </span>
-                            <span className="text-[0.6rem] text-gray-400">Total: <strong>{p.scores.total}</strong>/20</span>
+                            <span className="text-[0.6rem] text-gray-400">Score: <strong>{p.scores.total}</strong>/20</span>
                           </div>
                           <p className="text-xs text-gray-400 mt-1.5 leading-relaxed">{p.contentAction}</p>
                         </div>
@@ -473,13 +629,11 @@ export default function GeoPromptClient() {
                 <div className="space-y-3">
                   {results.recommendedSections.map((s, i) => (
                     <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 flex gap-4">
-                      <div className="w-7 h-7 rounded-full bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center shrink-0">
-                        {i + 1}
-                      </div>
+                      <div className="w-7 h-7 rounded-full bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center shrink-0">{i + 1}</div>
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                           <h4 className="text-sm font-bold text-gray-900">{s.title}</h4>
-                          <span className={`text-[0.6rem] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${PRIORITY_COLORS[s.priority]} bg-gray-50 border border-gray-100`}>
+                          <span className={`text-[0.6rem] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-50 border border-gray-100 ${PRIORITY_COLORS[s.priority]}`}>
                             {s.priority}
                           </span>
                         </div>
@@ -542,7 +696,7 @@ export default function GeoPromptClient() {
           {activeTab === 'schema' && (
             <div className="space-y-4">
               <p className="text-sm text-gray-500 leading-relaxed">
-                These schema types are recommended based on your topic and audience. Implementing them helps AI engines parse and cite your content more reliably.
+                Implementing these schema types helps AI engines reliably parse, understand and cite your content.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {results.schemaRecommendations.map((s, i) => (
@@ -551,7 +705,7 @@ export default function GeoPromptClient() {
                       <div className="px-2.5 py-1 bg-purple-50 border border-purple-100 rounded-lg shrink-0">
                         <span className="text-xs font-bold text-purple-700 font-mono">{s.schemaType}</span>
                       </div>
-                      <span className={`ml-auto text-[0.6rem] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${PRIORITY_COLORS[s.priority]} bg-gray-50 border border-gray-100`}>
+                      <span className={`ml-auto text-[0.6rem] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-50 border border-gray-100 ${PRIORITY_COLORS[s.priority]}`}>
                         {s.priority}
                       </span>
                     </div>
@@ -562,16 +716,15 @@ export default function GeoPromptClient() {
                   </div>
                 ))}
               </div>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mt-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
                 <div className="flex gap-3">
                   <svg className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div>
-                    <p className="text-sm font-bold text-amber-800 mb-1">Schema implementation tip</p>
+                    <p className="text-sm font-bold text-amber-800 mb-1">Build your schema now</p>
                     <p className="text-xs text-amber-700 leading-relaxed">
-                      Use the <strong>SaySEO Schema Markup Generator</strong> to build valid JSON-LD for FAQPage, Article, HowTo and LocalBusiness schemas. Add them to your page &lt;head&gt; or directly in your WordPress theme or plugin.
+                      Use the <strong>SaySEO Schema Markup Generator</strong> to build valid JSON-LD for FAQPage, HowTo, Article and LocalBusiness schemas — copy-paste ready for WordPress or any CMS.
                     </p>
                   </div>
                 </div>
@@ -583,25 +736,15 @@ export default function GeoPromptClient() {
           {activeTab === 'brief' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500">WordPress-ready content brief you can hand directly to a writer or AI assistant.</p>
+                <p className="text-sm text-gray-500">WordPress-ready content brief — hand to a writer or paste into an AI assistant.</p>
                 <button
                   onClick={handleCopyBrief}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-colors"
                 >
                   {briefCopied ? (
-                    <>
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      Copied!
-                    </>
+                    <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Copied!</>
                   ) : (
-                    <>
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                      Copy brief
-                    </>
+                    <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy brief</>
                   )}
                 </button>
               </div>
@@ -610,7 +753,6 @@ export default function GeoPromptClient() {
                 const b = results.contentBrief
                 return (
                   <div className="space-y-5">
-                    {/* Meta */}
                     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                       <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
                         <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">Page meta</p>
@@ -647,7 +789,6 @@ export default function GeoPromptClient() {
                       </div>
                     </div>
 
-                    {/* Sections */}
                     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                       <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
                         <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">Page structure</p>
@@ -670,13 +811,12 @@ export default function GeoPromptClient() {
                                 ))}
                               </div>
                             )}
-                            <p className="text-xs text-gray-500 leading-relaxed ml-0.5">{s.notes}</p>
+                            <p className="text-xs text-gray-500 leading-relaxed">{s.notes}</p>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    {/* Schema + CTA */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-white border border-gray-200 rounded-xl p-5">
                         <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-3">Required schema types</p>
