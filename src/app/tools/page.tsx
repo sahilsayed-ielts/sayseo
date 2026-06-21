@@ -113,6 +113,24 @@ const toolCategories = [
       },
     ],
   },
+  {
+    id: 'geo',
+    label: 'GEO & AI Search',
+    icon: '🤖',
+    description: 'Optimise content to be cited by AI search engines and answer engines.',
+    tools: [
+      {
+        slug: 'geo-prompt-mapper',
+        name: 'GEO Prompt Mapper',
+        description: 'Generate AI search prompt clusters, predicted GEO questions, content briefs and schema recommendations using only free data sources. Optimise for ChatGPT, Gemini, Perplexity and Google AI Overviews.',
+        time: '5 mins',
+        badge: 'New',
+        badgeColor: '#7C3AED',
+        icon: '🗺️',
+        use: 'Build citation-worthy content strategies for AI search engines without any paid tools.',
+      },
+    ],
+  },
 ]
 
 const allTools = toolCategories.flatMap((c) => c.tools.map((t) => ({ ...t, category: c.label })))
@@ -201,13 +219,13 @@ export default function ToolsPage() {
             </h1>
 
             <p className="text-lg text-gray-500 leading-[1.75] mb-8 max-w-[600px]">
-              Six purpose-built tools for the tasks SEO professionals do every day — previewing snippets, building schema markup, checking keyword density, and calculating ROI. All free, all in-browser.
+              Seven purpose-built tools for the tasks SEO professionals do every day — previewing snippets, building schema markup, checking keyword density, calculating ROI, and generating GEO prompt clusters for AI search. All free, all in-browser.
             </p>
 
             {/* Trust bar */}
             <div className="flex flex-wrap items-center gap-6 pt-6 border-t border-gray-100">
               {[
-                { value: '6', label: 'Free Tools' },
+                { value: '7', label: 'Free Tools' },
                 { value: '0', label: 'Signup Required' },
                 { value: '100%', label: 'Browser-Based' },
                 { value: 'Agency', label: 'Focused' },
