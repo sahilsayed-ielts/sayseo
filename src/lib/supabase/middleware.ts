@@ -27,19 +27,21 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Refresh session — do not remove this line
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
   const { pathname } = request.nextUrl
   const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p))
 
-  if (isProtected && !user) {
-    const loginUrl = request.nextUrl.clone()
-    loginUrl.pathname = '/auth/login'
-    loginUrl.searchParams.set('redirectTo', pathname)
-    return NextResponse.redirect(loginUrl)
+  if (isProtected) {
+    // Only call getUser() on protected routes to avoid timeout on public pages
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = '/auth/login'
+      loginUrl.searchParams.set('redirectTo', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
   }
 
   return supabaseResponse
