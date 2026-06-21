@@ -179,7 +179,7 @@ export default function GeoPromptClient() {
       fetchSource<{ posts: Array<{ title: string; score: number }>; source: string }>(
         `/api/geo/reddit?q=${t}`,
         'reddit',
-        (d) => redditToQueries(d.posts ?? [], inputs.topic),
+        (d) => redditToQueries(d.posts ?? []),
         'posts',
       ),
       fetchSource<{ topics: string[]; descriptions: string[]; source: string }>(

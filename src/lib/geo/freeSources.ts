@@ -59,14 +59,10 @@ export function autocompleteToQueries(suggestions: string[]): SourceQuery[] {
 
 export function redditToQueries(
   posts: Array<{ title: string; score: number }>,
-  topic: string,
 ): SourceQuery[] {
-  const topicWords = topic.toLowerCase().split(' ').filter((w) => w.length > 2)
+  // Reddit already filtered by topic relevance — trust its ranking, don't re-filter
   return posts
-    .filter((p) => {
-      const t = p.title.toLowerCase()
-      return topicWords.some((w) => t.includes(w)) && p.title.length > 20
-    })
+    .filter((p) => p.title.length > 20)
     .slice(0, 10)
     .map((p) => {
       const intent = classifyIntent(p.title)

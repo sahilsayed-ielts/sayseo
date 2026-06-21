@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       `https://www.reddit.com/search.json?q=${encodeURIComponent(q)}&sort=top&limit=30&type=link`,
       {
         headers: {
-          'User-Agent': 'SaySEO GEO Tool/1.0 (https://sayseo.co.uk)',
+          'User-Agent': 'Mozilla/5.0 (compatible; SaySEO/1.0; +https://sayseo.co.uk)',
           Accept: 'application/json',
         },
         signal: AbortSignal.timeout(8000),
