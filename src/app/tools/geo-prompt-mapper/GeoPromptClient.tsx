@@ -100,11 +100,11 @@ const TABS: { id: Tab; label: string }[] = [
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
 const DEFAULTS: UserInputs = {
-  websiteUrl:   'https://ieltstrainingcamp.com',
-  topic:        'IELTS online courses',
-  country:      'India',
-  audience:     'IELTS students',
-  businessGoal: 'Promote online IELTS courses',
+  websiteUrl:   '',
+  topic:        '',
+  country:      '',
+  audience:     '',
+  businessGoal: '',
 }
 
 const IDLE_SOURCES: Record<SourceKey, SourceState> = {

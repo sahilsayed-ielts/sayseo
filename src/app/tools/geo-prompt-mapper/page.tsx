@@ -121,8 +121,6 @@ export default function GeoPromptMapperPage() {
             {[
               { label: 'Verified free source', color: 'bg-emerald-500', bg: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
               { label: 'Extracted from website', color: 'bg-blue-500', bg: 'bg-blue-50 border-blue-200 text-blue-700' },
-              { label: 'Predicted AI prompt', color: 'bg-purple-500', bg: 'bg-purple-50 border-purple-200 text-purple-700' },
-              { label: 'GEO opportunity', color: 'bg-amber-500', bg: 'bg-amber-50 border-amber-200 text-amber-700' },
             ].map((s) => (
               <span key={s.label} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${s.bg}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${s.color}`} />
